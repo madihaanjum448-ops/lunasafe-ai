@@ -2,7 +2,20 @@ import React from 'react';
 import { useMission } from '../context/useMission';
 
 export default function HazardLegend() {
-  const { hazardCells, showHeatmap, setShowHeatmap, showDetectionsInHazardMap, setShowDetectionsInHazardMap } = useMission();
+  const { hazardCells, showHeatmap, setShowHeatmap, showDetectionsInHazardMap, setShowDetectionsInHazardMap, imageMeta } = useMission();
+
+  if (!imageMeta.isSample) {
+    return (
+      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 backdrop-blur-sm shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-300">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span className="font-semibold text-slate-200">Hazard Heatmap Layer:</span>
+          <span className="text-amber-300 font-mono">Not processed yet. The analysis backend is not connected.</span>
+        </div>
+        <span className="text-slate-400 text-[11px]">0 cells available</span>
+      </div>
+    );
+  }
 
   const safeCount = hazardCells.filter((c) => c.class === 'safe').length;
   const cautionCount = hazardCells.filter((c) => c.class === 'caution').length;

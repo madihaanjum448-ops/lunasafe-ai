@@ -299,22 +299,30 @@ export default function UploadPage() {
               <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Precomputed Boulders:</span>
                 <span className="font-mono text-cyan-300 font-bold">
-                  {detections.length} obstacles
-                  {imageMeta.isSample && (
-                    <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                      (Mock value)
-                    </span>
+                  {imageMeta.isSample ? (
+                    <>
+                      {detections.length} obstacles
+                      <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
+                        (Mock value)
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400 font-normal">None (Not processed yet)</span>
                   )}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className="text-slate-400">Hazard Grid Partition:</span>
                 <span className="font-mono text-slate-200">
-                  8×8 ({hazardCells.length} cells)
-                  {imageMeta.isSample && (
-                    <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                      (Mock value)
-                    </span>
+                  {imageMeta.isSample ? (
+                    <>
+                      8×8 ({hazardCells.length} cells)
+                      <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
+                        (Mock value)
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400 font-normal">None (Not processed yet)</span>
                   )}
                 </span>
               </div>

@@ -111,6 +111,12 @@ export function MissionProvider({ children }) {
         isSample: false,
       });
 
+      // Clear mock analysis data: do not show mock detections, hazard cells, or warnings for user uploads
+      setDetections([]);
+      setHazardCells([]);
+      setWarnings([]);
+      setSelectedCell(null);
+
       setUploadSuccess(`Successfully loaded "${file.name}" (${realWidth}×${realHeight}px, ${realFormattedSize}).`);
     };
 
