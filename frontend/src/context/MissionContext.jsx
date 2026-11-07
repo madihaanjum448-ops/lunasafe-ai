@@ -19,6 +19,8 @@ export function MissionProvider({ children }) {
     width: sampleResult.image.width,
     height: sampleResult.image.height,
     pixelScaleM: sampleResult.image.pixel_scale_m,
+    sunElevationDeg: sampleResult.image.sun_elevation_deg,
+    projection: sampleResult.image.projection,
     fileName: 'sample_lunar_illustration.png',
     fileSize: '12.8 MB',
     isSample: true,
@@ -54,6 +56,8 @@ export function MissionProvider({ children }) {
       width: sampleResult.image.width,
       height: sampleResult.image.height,
       pixelScaleM: sampleResult.image.pixel_scale_m,
+      sunElevationDeg: sampleResult.image.sun_elevation_deg,
+      projection: sampleResult.image.projection,
       fileName: 'sample_lunar_illustration.png',
       fileSize: '12.8 MB',
       isSample: true,
@@ -149,7 +153,9 @@ export function MissionProvider({ children }) {
         src: objectUrl,
         width: realWidth,
         height: realHeight,
-        pixelScaleM: null, // Scale metadata unavailable until backend provides it
+        pixelScaleM: null,         // Unavailable until backend provides it
+        sunElevationDeg: null,     // Unavailable until backend provides it
+        projection: null,          // Unavailable until backend provides it
         fileName: file.name,
         fileSize: realFormattedSize,
         isSample: false,

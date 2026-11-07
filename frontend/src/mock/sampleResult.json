@@ -3,7 +3,9 @@
     "id": "img_001",
     "width": 4096,
     "height": 4096,
-    "pixel_scale_m": 0.5
+    "pixel_scale_m": 0.5,
+    "sun_elevation_deg": 28.5,
+    "projection": "Equirectangular (Moon 2000)"
   },
   "detections": [
     { "id": 1, "bbox": [1840, 1920, 1910, 1990], "confidence": 0.96, "size_m": 4.2 },
