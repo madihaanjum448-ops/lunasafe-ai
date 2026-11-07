@@ -7,6 +7,8 @@ import {
   MAX_IMAGE_HEIGHT,
   MAX_FILE_SIZE_MB,
 } from '../constants/upload';
+import { getMetadataWarnings } from '../constants/metadata';
+import { MetadataSummaryCard, MetadataWarningsCard } from '../components/MetadataCards';
 
 export default function UploadPage() {
   const {
@@ -25,6 +27,9 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  // Derived metadata warnings – computed from imageMeta on each render
+  const metaWarnings = getMetadataWarnings(imageMeta);
 
   // Handle standard file selection
   const onFileChange = (e) => {
@@ -360,6 +365,12 @@ export default function UploadPage() {
                 </span>
               </div>
             </div>
+
+            {/* Metadata Summary Card */}
+            <MetadataSummaryCard imageMeta={imageMeta} />
+
+            {/* Metadata Warnings Card */}
+            <MetadataWarningsCard metaWarnings={metaWarnings} />
 
             {/* Navigation Buttons to next screens */}
             <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
