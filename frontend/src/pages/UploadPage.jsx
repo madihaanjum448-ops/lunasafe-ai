@@ -1,6 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMission } from '../context/useMission';
+import {
+  ACCEPTED_FILE_TYPES_STRING,
+  MAX_IMAGE_WIDTH,
+  MAX_IMAGE_HEIGHT,
+  MAX_FILE_SIZE_MB,
+} from '../constants/upload';
 
 export default function UploadPage() {
   const {
@@ -8,6 +14,8 @@ export default function UploadPage() {
     uploadError,
     setUploadError,
     uploadSuccess,
+    uploadNote,
+    setUploadNote,
     handleImageUpload,
     loadSampleData,
     detections,
@@ -20,9 +28,12 @@ export default function UploadPage() {
 
   // Handle standard file selection
   const onFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleImageUpload(files);
+    }
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
@@ -40,9 +51,9 @@ export default function UploadPage() {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageUpload(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageUpload(files);
     }
   };
 
@@ -66,7 +77,26 @@ export default function UploadPage() {
         </p>
       </div>
 
-      {/* Validation Alert: Wrong file type error */}
+      {/* Multiple Files Info Note */}
+      {uploadNote && (
+        <div className="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between shadow-md animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{uploadNote}</span>
+          </div>
+          <button
+            onClick={() => setUploadNote(null)}
+            className="text-amber-400 hover:text-white p-1"
+            aria-label="Dismiss note"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Validation Alert: Error message */}
       {uploadError && (
         <div className="p-4 rounded-xl bg-red-950/60 border border-red-500/60 text-red-200 text-sm flex items-start gap-3 shadow-lg shadow-red-950/40 animate-in fade-in duration-200">
           <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,11 +144,12 @@ export default function UploadPage() {
                 : 'border-slate-700 hover:border-cyan-500/70 bg-slate-900/60 hover:bg-slate-900/90'
             }`}
           >
-            {/* Hidden native input with strict image acceptance */}
+            {/* Hidden native input with strict image acceptance and multiple selection support */}
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/tiff,image/bmp,.png,.jpg,.jpeg,.webp,.tif,.tiff"
+              multiple
+              accept={ACCEPTED_FILE_TYPES_STRING}
               onChange={onFileChange}
               className="hidden"
             />
@@ -140,7 +171,9 @@ export default function UploadPage() {
             <div className="mt-4 flex items-center gap-2 text-[11px] text-slate-400">
               <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Images only</span>
               <span>•</span>
-              <span>Max resolution up to 8192×8192px</span>
+              <span>Max size {MAX_FILE_SIZE_MB} MB</span>
+              <span>•</span>
+              <span>Max resolution up to {MAX_IMAGE_WIDTH}×{MAX_IMAGE_HEIGHT}px</span>
             </div>
           </div>
 
