@@ -1,21 +1,123 @@
 import React, { useState } from 'react';
 import ImageViewer from '../components/ImageViewer';
 import DetectionOverlay from '../components/DetectionOverlay';
+import HazardGridOverlay from '../components/HazardGridOverlay';
 import ConfidenceSlider from '../components/ConfidenceSlider';
 import WarningsBanner from '../components/WarningsBanner';
 import { useMission } from '../context/useMission';
+import { BAND_STYLES, CONFIDENCE_HIGH_MIN, CONFIDENCE_MED_MIN } from '../constants/detections';
 
+/* ─────────────────────────────────────────────────────────────────
+   LayersPanel
+   Three toggles (boulder boxes / confidence labels / hazard heatmap)
+   + a small per-band colour legend.  State lives in MissionContext so
+   it persists when the user navigates to the Hazard Map page and back.
+   ───────────────────────────────────────────────────────────────── */
+function LayersPanel() {
+  const {
+    showBoulderBoxes,    setShowBoulderBoxes,
+    showConfidenceLabels, setShowConfidenceLabels,
+    showHeatmap,         setShowHeatmap,
+  } = useMission();
+
+  const toggleRow = (label, checked, onChange, sublabel = null) => (
+    <label className="flex items-center gap-3 cursor-pointer group">
+      <span className="relative flex-shrink-0">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only peer"
+        />
+        {/* Custom pill toggle */}
+        <span
+          className={`block w-9 h-5 rounded-full transition-colors duration-200 ${
+            checked ? 'bg-cyan-500' : 'bg-slate-700'
+          }`}
+        />
+        <span
+          className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+            checked ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </span>
+      <span className="flex flex-col">
+        <span className={`text-xs font-medium leading-tight ${checked ? 'text-slate-100' : 'text-slate-400'}`}>
+          {label}
+        </span>
+        {sublabel && (
+          <span className="text-[11px] text-slate-500 leading-tight">{sublabel}</span>
+        )}
+      </span>
+    </label>
+  );
+
+  return (
+    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+        <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <h3 className="text-sm font-semibold text-slate-100">Layers</h3>
+      </div>
+
+      {/* Toggle rows */}
+      <div className="space-y-3">
+        {toggleRow('Boulder boxes', showBoulderBoxes, setShowBoulderBoxes)}
+        {toggleRow('Confidence labels', showConfidenceLabels, setShowConfidenceLabels,
+          showBoulderBoxes ? null : 'Enable boulder boxes first')}
+        {toggleRow('Hazard heatmap', showHeatmap, setShowHeatmap,
+          '8 × 8 grid (Mock data)')}
+      </div>
+
+      {/* Confidence band colour legend */}
+      <div className="border-t border-slate-800 pt-3 space-y-1.5">
+        <span className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">
+          Confidence bands
+        </span>
+        {Object.values(BAND_STYLES).map((b) => (
+          <div key={b.label} className="flex items-center gap-2 text-xs">
+            <span className={`w-4 h-4 rounded-sm border-2 flex-shrink-0 ${b.swatchBg} ${b.swatchBorder}`} />
+            <span className={`font-medium ${b.textClass}`}>{b.label}</span>
+            <span className="text-slate-500">{b.labelRange}</span>
+          </div>
+        ))}
+        <p className="text-[11px] text-slate-500 leading-snug pt-0.5">
+          Thresholds: high ≥ {(CONFIDENCE_HIGH_MIN * 100).toFixed(0)}%,
+          medium ≥ {(CONFIDENCE_MED_MIN * 100).toFixed(0)}%.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   DetectionsPage
+   ───────────────────────────────────────────────────────────────── */
 export default function DetectionsPage() {
-  const { detections, confidenceThreshold, imageMeta, loadSampleData } = useMission();
+  const {
+    detections,
+    confidenceThreshold,
+    imageMeta,
+    loadSampleData,
+    showBoulderBoxes,
+    showConfidenceLabels,
+  } = useMission();
+
   const [selectedDetection, setSelectedDetection] = useState(null);
 
   const visibleDetections = detections.filter(
     (d) => d.confidence >= confidenceThreshold
   );
 
+  // True when the sample is loaded but the slider has filtered out every box
+  const allFilteredOut = imageMeta.isSample && detections.length > 0 && visibleDetections.length === 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Page Header */}
+      {/* ── Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -31,12 +133,12 @@ export default function DetectionsPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
             {imageMeta.isSample
-              ? 'Pan and zoom across the landing site. Each detected surface hazard is framed with an aligned SVG bounding box and confidence rating.'
+              ? 'Pan and zoom across the landing site. Each detected surface hazard is framed with a confidence-coloured bounding box. Toggle layers and adjust the threshold using the controls below.'
               : 'Pan and zoom across your uploaded lunar image.'}
           </p>
         </div>
 
-        {/* Quick summary badges (shown on sample illustration) */}
+        {/* Summary badges (sample only) */}
         {imageMeta.isSample && (
           <div className="flex items-center gap-2 self-start md:self-auto">
             <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center gap-2">
@@ -44,14 +146,14 @@ export default function DetectionsPage() {
               <span className="font-mono font-bold text-white">{detections.length}</span>
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-xs flex items-center gap-2 text-cyan-300">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
               <span className="font-mono font-bold">{visibleDetections.length} visible</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Prominent Message when User Upload is Active */}
+      {/* ── "Not processed yet" banner for real uploads ── */}
       {!imageMeta.isSample && (
         <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
           <div className="flex items-center gap-3">
@@ -76,42 +178,66 @@ export default function DetectionsPage() {
         </div>
       )}
 
-      {/* Warnings Banner if present and on sample illustration */}
+      {/* ── Warnings banner (sample only) ── */}
       {imageMeta.isSample && <WarningsBanner />}
 
-      {/* Confidence Filter Slider Control (only on sample illustration) */}
+      {/* ── Confidence threshold slider (sample only) ── */}
       {imageMeta.isSample && <ConfidenceSlider />}
 
-      {/* Main Workspace: Image Viewer & Detection Details Inspector */}
+      {/* ── Main workspace ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Pan-and-zoom viewer stage */}
+
+        {/* Left: image viewer */}
         <div className="lg:col-span-8 xl:col-span-9">
           <ImageViewer
-            overlayTitle={imageMeta.isSample ? "Boulder Detection Layer" : "Uploaded Image Viewer"}
+            overlayTitle={imageMeta.isSample ? 'Boulder Detection Layer' : 'Uploaded Image Viewer'}
             extraToolbarActions={
               imageMeta.isSample ? (
                 <span className="text-xs font-mono text-cyan-400">
                   Filter: ≥ {(confidenceThreshold * 100).toFixed(0)}%
                 </span>
               ) : (
-                <span className="text-xs font-mono text-amber-400">
-                  Raw Ingest Mode
-                </span>
+                <span className="text-xs font-mono text-amber-400">Raw Ingest Mode</span>
               )
             }
           >
             {imageMeta.isSample && (
-              <DetectionOverlay onSelectDetection={(det) => setSelectedDetection(det)} />
+              <>
+                {/* Heatmap layer (shared with Hazard Map page via context) */}
+                <HazardGridOverlay />
+
+                {/* Detection boxes + labels (controlled by Layers panel) */}
+                <DetectionOverlay
+                  onSelectDetection={(det) => setSelectedDetection(det)}
+                  showBoxes={showBoulderBoxes}
+                  showLabels={showConfidenceLabels}
+                />
+              </>
             )}
           </ImageViewer>
+
+          {/* "No detections above this confidence" – only shown for sample when all filtered out */}
+          {allFilteredOut && (
+            <div className="mt-3 px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-400 text-xs flex items-center gap-2">
+              <svg className="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              No detections above this confidence.
+            </div>
+          )}
         </div>
 
-        {/* Selected Boulder Inspector Card (Right Column) */}
+        {/* Right column: Layers panel + boulder inspector + tips */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+
+          {/* Layers panel (sample only) */}
+          {imageMeta.isSample && <LayersPanel />}
+
+          {/* Boulder Inspector card */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-semibold text-white text-sm flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400" />
                 Boulder Telemetry
               </h3>
               {selectedDetection && (
@@ -140,19 +266,15 @@ export default function DetectionsPage() {
                     </div>
                   </div>
 
-                  {/* Estimated size */}
                   <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
                     <span className="text-slate-400">Estimated Size:</span>
                     {selectedDetection.size_m !== null ? (
-                      <span className="font-mono font-bold text-slate-200">
-                        {selectedDetection.size_m} meters
-                      </span>
+                      <span className="font-mono font-bold text-slate-200">{selectedDetection.size_m} meters</span>
                     ) : (
                       <span className="font-mono italic text-amber-400">Unavailable</span>
                     )}
                   </div>
 
-                  {/* Bounding box pixels */}
                   <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1.5">
                     <span className="text-slate-400 block">Bounding Box [x1, y1, x2, y2]:</span>
                     <div className="font-mono text-[11px] text-cyan-300 bg-slate-900 p-2 rounded border border-slate-800">
@@ -160,7 +282,6 @@ export default function DetectionsPage() {
                     </div>
                   </div>
 
-                  {/* Calculated box dimensions */}
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div className="p-2 rounded bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 block">Box Width:</span>
