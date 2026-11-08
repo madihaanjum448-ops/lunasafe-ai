@@ -40,6 +40,10 @@ export function MissionProvider({ children }) {
   // Layer toggles
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showDetectionsInHazardMap, setShowDetectionsInHazardMap] = useState(false);
+  // Boulder Detections page layer toggles (persisted across page switches)
+  const [showBoulderBoxes, setShowBoulderBoxes] = useState(true);
+  const [showConfidenceLabels, setShowConfidenceLabels] = useState(true);
+
 
   // Upload feedback state
   const [uploadError, setUploadError] = useState(null);
@@ -194,6 +198,10 @@ export function MissionProvider({ children }) {
         setShowHeatmap,
         showDetectionsInHazardMap,
         setShowDetectionsInHazardMap,
+        showBoulderBoxes,
+        setShowBoulderBoxes,
+        showConfidenceLabels,
+        setShowConfidenceLabels,
         uploadError,
         setUploadError,
         uploadSuccess,

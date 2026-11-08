@@ -1,17 +1,33 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, useControls, useTransformEffect } from 'react-zoom-pan-pinch';
 import { useMission } from '../context/useMission';
 
 /**
  * Floating zoom/pan toolbar inside the viewer
  */
-function ViewerControls({ currentScale }) {
-  const { zoomIn, zoomOut, resetTransform } = useControls();
+function ViewerControls({ fitScale, fitPositionX, fitPositionY }) {
+  const { zoomIn, zoomOut, setTransform } = useControls();
+  // Initializes directly to fitScale on mount; tracks live scale via useTransformEffect
+  const [scale, setScale] = useState(fitScale);
+
+  useTransformEffect(({ state }) => {
+    if (state?.scale) {
+      setScale(state.scale);
+    }
+  });
+
+  // Calculate zoom step proportional to the fitted scale
+  const zoomStep = Math.max(0.01, fitScale * 0.25);
+
+  const handleReset = () => {
+    setTransform(fitPositionX, fitPositionY, fitScale, 200);
+    setScale(fitScale);
+  };
 
   return (
     <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl p-1.5 shadow-xl">
       <button
-        onClick={() => zoomIn(0.3)}
+        onClick={() => zoomIn(zoomStep)}
         className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
         title="Zoom In"
         aria-label="Zoom In"
@@ -22,7 +38,7 @@ function ViewerControls({ currentScale }) {
       </button>
 
       <button
-        onClick={() => zoomOut(0.3)}
+        onClick={() => zoomOut(zoomStep)}
         className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
         title="Zoom Out"
         aria-label="Zoom Out"
@@ -33,7 +49,7 @@ function ViewerControls({ currentScale }) {
       </button>
 
       <button
-        onClick={() => resetTransform()}
+        onClick={handleReset}
         className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
         title="Reset & Fit to View"
         aria-label="Reset and Fit to View"
@@ -45,8 +61,9 @@ function ViewerControls({ currentScale }) {
 
       <div className="h-5 w-px bg-slate-700 mx-1"></div>
 
+      {/* Real zoom relative to native size: 1.0 = 100% */}
       <div className="px-2 py-1 text-xs font-mono font-semibold text-cyan-300 min-w-[50px] text-center">
-        {(currentScale * 100).toFixed(0)}%
+        {(scale * 100).toFixed(0)}%
       </div>
     </div>
   );
@@ -59,9 +76,8 @@ export default function ImageViewer({ children, overlayTitle, extraToolbarAction
   const { imageMeta } = useMission();
   const stageRef = useRef(null);
   const [stageDims, setStageDims] = useState(null);
-  const [scale, setScale] = useState(1);
 
-  // Measure container width and height once mounted or on image change
+  // Measure container width and height once mounted and on resize
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
@@ -74,19 +90,35 @@ export default function ImageViewer({ children, overlayTitle, extraToolbarAction
     };
 
     measure();
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setStageDims({ width, height });
+        }
+      }
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [imageMeta.id, imageMeta.width, imageMeta.height]);
 
-  // Compute initial scale as min(containerWidth / imageWidth, containerHeight / imageHeight)
+  // Compute fitScale = the smaller of container width / image width and container height / image height
   const containerWidth = stageDims?.width || 800;
   const containerHeight = stageDims?.height || 500;
   const fitScale = Math.min(
     containerWidth / imageMeta.width,
     containerHeight / imageMeta.height
   );
-  // Fit with 4% padding so full image is visible
-  const initialScale = Math.max(0.005, Number((fitScale * 0.96).toFixed(4)));
-  // Set minScale below that so user can zoom out further
-  const minScale = Math.max(0.001, Number((initialScale * 0.5).toFixed(4)));
+
+  // Centering offsets so the fitted image is centered in the container
+  const fitPositionX = (containerWidth - imageMeta.width * fitScale) / 2;
+  const fitPositionY = (containerHeight - imageMeta.height * fitScale) / 2;
+
+  // Zoom bounds: out to half of fitted view, in at least 8x beyond fitted view
+  const minScale = Math.max(0.0001, fitScale * 0.5);
+  const maxScale = Math.max(fitScale * 8, 8);
 
   return (
     <div className="relative w-full h-[70vh] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col">
@@ -124,26 +156,30 @@ export default function ImageViewer({ children, overlayTitle, extraToolbarAction
       >
         {stageDims ? (
           <TransformWrapper
-            key={`${imageMeta.id}-${stageDims.width}x${stageDims.height}`}
-            initialScale={initialScale}
+            key={`${imageMeta.id}-${Math.round(stageDims.width)}x${Math.round(stageDims.height)}`}
+            initialScale={fitScale}
+            initialPositionX={fitPositionX}
+            initialPositionY={fitPositionY}
             minScale={minScale}
-            maxScale={8}
+            maxScale={maxScale}
             centerOnInit={true}
             wheel={{ step: 0.1 }}
             doubleClick={{ mode: 'zoomIn' }}
-            onTransformed={(ref) => {
-              if (ref && ref.state) {
-                setScale(ref.state.scale);
-              }
-            }}
           >
-            <ViewerControls currentScale={scale} />
+            <ViewerControls
+              fitScale={fitScale}
+              fitPositionX={fitPositionX}
+              fitPositionY={fitPositionY}
+            />
 
             <TransformComponent
               wrapperClass="!w-full !h-full"
-              contentClass="!w-full !h-full flex items-center justify-center"
+              contentStyle={{
+                width: `${imageMeta.width}px`,
+                height: `${imageMeta.height}px`,
+              }}
             >
-              {/* 1. ONE wrapper div with explicit width = image width px and height = image height px, position: relative */}
+              {/* Image & registered SVG overlay in unified native-pixel coordinate space */}
               <div
                 style={{
                   position: 'relative',
@@ -151,7 +187,6 @@ export default function ImageViewer({ children, overlayTitle, extraToolbarAction
                   height: `${imageMeta.height}px`,
                 }}
               >
-                {/* 2. <img> with width:100%; height:100%; max-width:none; display:block */}
                 <img
                   src={imageMeta.src}
                   alt="Lunar satellite observation"
@@ -166,7 +201,6 @@ export default function ImageViewer({ children, overlayTitle, extraToolbarAction
                   draggable={false}
                 />
 
-                {/* 2. SVG overlay with position:absolute; inset:0; width:100%; height:100%; viewBox="0 0 {width} {height}" */}
                 <svg
                   style={{
                     position: 'absolute',
