@@ -297,6 +297,7 @@ def build_hazard_grid(
     # ------------------------------------------------------------
 
     buckets: Dict[tuple, list] = {}
+    clipped_edge_count = 0
 
     for detection in detections:
 
@@ -312,27 +313,50 @@ def build_hazard_grid(
 
         x1, y1, x2, y2 = detection.bbox
 
-        if (
-            x2 <= x1
-            or y2 <= y1
-            or x1 < 0
-            or y1 < 0
-            or x2 > image.width
-            or y2 > image.height
-        ):
+        if x2 <= x1 or y2 <= y1:
             warnings.append(
-                f"Detection {detection.id} has an invalid or "
-                "out-of-image bounding box and was excluded."
+                f"Detection {detection.id} has an invalid "
+                "bounding box (non-positive width or height) and was excluded."
             )
             continue
 
-        center_x = (x1 + x2) / 2.0
-        center_y = (y1 + y2) / 2.0
+        # Exclude detections that lie completely outside the image bounds
+        if x2 <= 0 or x1 >= image.width or y2 <= 0 or y1 >= image.height:
+            warnings.append(
+                f"Detection {detection.id} is entirely outside the image bounds "
+                "and was excluded."
+            )
+            continue
+
+        # Handle detections cut by the image edge by clipping them to image bounds
+        is_cut = (x1 < 0 or y1 < 0 or x2 > image.width or y2 > image.height)
+        if is_cut:
+            cx1 = max(0.0, float(x1))
+            cy1 = max(0.0, float(y1))
+            cx2 = min(float(image.width), float(x2))
+            cy2 = min(float(image.height), float(y2))
+            if cx2 <= cx1 or cy2 <= cy1:
+                warnings.append(
+                    f"Detection {detection.id} has zero area after clipping and was excluded."
+                )
+                continue
+            clipped_edge_count += 1
+            center_x = (cx1 + cx2) / 2.0
+            center_y = (cy1 + cy2) / 2.0
+        else:
+            center_x = (x1 + x2) / 2.0
+            center_y = (y1 + y2) / 2.0
 
         col = min(int(center_x / cell_w_px), cols - 1)
         row = min(int(center_y / cell_h_px), rows - 1)
 
         buckets.setdefault((row, col), []).append(detection)
+
+    if clipped_edge_count > 0:
+        warnings.append(
+            f"{clipped_edge_count} boulder detection(s) were cut by the image edge "
+            "and were clipped to image bounds; physical measurements may be truncated."
+        )
 
     # ------------------------------------------------------------
     # STEP 4: Calculate each grid cell

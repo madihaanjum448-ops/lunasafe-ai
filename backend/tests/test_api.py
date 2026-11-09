@@ -494,10 +494,10 @@ def test_detection_outside_image_bounds(client):
     req = {
         "image": {**MOCK_IMAGE, "width": 100, "height": 100},
         "detections": [
-            {"id": 1, "bbox": [-10, 10, 20, 30], "confidence": 0.9},
-            {"id": 2, "bbox": [10, 20, 150, 40], "confidence": 0.9},
-            {"id": 3, "bbox": [10, -5, 30, 40], "confidence": 0.9},
-            {"id": 4, "bbox": [10, 20, 30, 150], "confidence": 0.9},
+            {"id": 1, "bbox": [-50, 10, -10, 30], "confidence": 0.9},
+            {"id": 2, "bbox": [120, 20, 150, 40], "confidence": 0.9},
+            {"id": 3, "bbox": [10, -50, 30, -10], "confidence": 0.9},
+            {"id": 4, "bbox": [10, 120, 30, 150], "confidence": 0.9},
             {"id": 5, "bbox": [20, 20, 10, 10], "confidence": 0.9},  # inverted bbox x2 <= x1
         ],
         "config": {"grid_rows": 2, "grid_cols": 2},
@@ -506,9 +506,70 @@ def test_detection_outside_image_bounds(client):
     assert r.status_code == 200
     body = r.json()
     warnings = body["warnings"]
-    assert any("out-of-image" in w for w in warnings)
+    assert any("entirely outside the image bounds" in w for w in warnings)
     total_boulders = sum(c["raw_boulder_count"] for c in body["hazard_cells"])
     assert total_boulders == 0
+
+
+def test_detection_edge_cut_clipping(client):
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [-10, 10, 20, 30], "confidence": 0.9},  # cut on left
+            {"id": 2, "bbox": [80, 20, 120, 40], "confidence": 0.9},  # cut on right
+            {"id": 3, "bbox": [10, -15, 30, 40], "confidence": 0.9},  # cut on top
+            {"id": 4, "bbox": [10, 80, 30, 115], "confidence": 0.9},  # cut on bottom
+        ],
+        "config": {"grid_rows": 2, "grid_cols": 2},
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    body = r.json()
+    warnings = body["warnings"]
+    assert any("cut by the image edge and were clipped" in w for w in warnings)
+    total_boulders = sum(c["raw_boulder_count"] for c in body["hazard_cells"])
+    assert total_boulders == 4
+
+
+def test_poisson_hand_computed_and_monotonicity():
+    import math
+    from app.services.hazard import footprint_area_m2, poisson_hazard_probability
+
+    a_cell = 100.0
+    d_footprint = 10.0
+    a_fp = footprint_area_m2(d_footprint)
+
+    # 0, 1, 2, 4 boulders hand computation
+    # k=0
+    assert poisson_hazard_probability(0.0 / a_cell, a_fp) == 0.0
+    # k=1: rho = 0.01 -> 1 - exp(-0.01 * 25*pi) ~= 0.544068
+    p1 = poisson_hazard_probability(1.0 / a_cell, a_fp)
+    assert abs(p1 - (1.0 - math.exp(-0.01 * 25 * math.pi))) < 1e-6
+    assert abs(p1 - 0.544068) < 1e-4
+
+    # k=2: rho = 0.02 -> 1 - exp(-0.02 * 25*pi) ~= 0.792120
+    p2 = poisson_hazard_probability(2.0 / a_cell, a_fp)
+    assert abs(p2 - 0.7921) < 1e-4
+
+    # k=4: rho = 0.04 -> 1 - exp(-0.04 * 25*pi) ~= 0.956786
+    p4 = poisson_hazard_probability(4.0 / a_cell, a_fp)
+    assert abs(p4 - 0.9568) < 1e-4
+
+    # Monotonicity in rho
+    rhos = [0.0, 0.001, 0.01, 0.05, 0.1, 0.5, 1.0, 10.0]
+    p_rhos = [poisson_hazard_probability(r, a_fp) for r in rhos]
+    for i in range(len(p_rhos) - 1):
+        assert p_rhos[i] <= p_rhos[i + 1]
+
+    # Monotonicity in A
+    areas = [10.0, 50.0, 78.54, 100.0, 500.0]
+    p_areas = [poisson_hazard_probability(0.02, a) for a in areas]
+    for i in range(len(p_areas) - 1):
+        assert p_areas[i] <= p_areas[i + 1]
+
+    # Probability bounds in [0, 1]
+    assert 0.0 <= poisson_hazard_probability(0.0, 10.0) <= 1.0
+    assert 0.0 <= poisson_hazard_probability(100.0, 1000.0) <= 1.0
 
 
 def test_detection_on_cell_boundary(client):
