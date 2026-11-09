@@ -1,0 +1,14 @@
+{
+  "grid_rows": 4,
+  "grid_cols": 4,
+  "lander_footprint_diameter_m": 10.0,
+  "hazard_height_threshold_m": 0.5,
+  "detection_confidence_min": 0.5,
+  "slope_gate_deg": 10.0,
+  "caution_p_hazard": 0.1,
+  "unsafe_p_hazard": 0.3,
+  "apply_recall_correction": true,
+  "shadow_height_min_sun_elevation_deg": 5.0,
+  "shadow_height_max_sun_elevation_deg": 80.0,
+  "pixel_uncertainty_px": 1.0
+}
