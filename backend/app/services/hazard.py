@@ -75,6 +75,40 @@ def poisson_hazard_probability(
     return max(0.0, min(1.0, probability))
 
 
+def suggest_grid_dimensions(
+    image_width: int,
+    image_height: int,
+    pixel_scale_m: float,
+    footprint_diameter_m: float,
+) -> Tuple[int, int]:
+    """
+    Suggest grid (rows, cols) so that each grid cell dimension approximately
+    matches the lander footprint diameter, avoiding probability dilution
+    while keeping cells large enough to encompass a landing attempt.
+
+    Formula:
+        cols = max(1, round((image_width * pixel_scale_m) / footprint_diameter_m))
+        rows = max(1, round((image_height * pixel_scale_m) / footprint_diameter_m))
+
+    Returns:
+        (rows, cols)
+    """
+    if image_width <= 0 or image_height <= 0:
+        raise ValueError("Image dimensions must be positive.")
+    if not math.isfinite(pixel_scale_m) or pixel_scale_m <= 0:
+        raise ValueError("Pixel scale must be a positive finite number.")
+    if not math.isfinite(footprint_diameter_m) or footprint_diameter_m <= 0:
+        raise ValueError("Footprint diameter must be a positive finite number.")
+
+    width_m = image_width * pixel_scale_m
+    height_m = image_height * pixel_scale_m
+
+    cols = max(1, int(round(width_m / footprint_diameter_m)))
+    rows = max(1, int(round(height_m / footprint_diameter_m)))
+
+    return rows, cols
+
+
 # ================================================================
 # 2. RECALL LOOKUP
 # ================================================================
@@ -223,6 +257,29 @@ def build_hazard_grid(
             f"than the lander footprint ({footprint_area:.1f} m2). "
             "Consider using a coarser grid."
         )
+    elif cell_area > 10.0 * footprint_area:
+        warnings.append(
+            f"Grid cell area ({cell_area:.1f} m2) is more than 10x "
+            f"the lander footprint area ({footprint_area:.1f} m2). "
+            "Large cells dilute boulder density and may underestimate "
+            "localized hazard probability; consider using a finer grid."
+        )
+
+    if slope_by_cell is not None:
+        slope_rows = len(slope_by_cell)
+        slope_cols = (
+            len(slope_by_cell[0])
+            if (slope_rows > 0 and isinstance(slope_by_cell[0], list))
+            else 0
+        )
+        dims_match = (slope_rows == rows) and all(
+            isinstance(r, list) and len(r) == cols for r in slope_by_cell
+        )
+        if not dims_match:
+            warnings.append(
+                f"Slope grid dimensions ({slope_rows}x{slope_cols}) differ from "
+                f"hazard grid dimensions ({rows}x{cols}); mismatched cells have slope not assessed."
+            )
 
     # ------------------------------------------------------------
     # STEP 2: Prepare measurement lookup

@@ -395,6 +395,46 @@ def test_hazard_requires_pixel_scale(client):
     assert r.status_code == 422
 
 
+def test_grid_cell_large_area_warning_and_helper(client):
+    from app.services.hazard import suggest_grid_dimensions
+
+    # 1. Helper suggests fine enough grid
+    # 1000x1000 px, 0.5 m/px = 500x500 m. Footprint 10m -> 50x50 grid cells of 10x10 m.
+    rows, cols = suggest_grid_dimensions(1000, 1000, 0.5, 10.0)
+    assert rows == 50
+    assert cols == 50
+
+    # 2. Default 8x8 on 1000x1000 image with 0.5 m/px gives cell area 3906.25 m^2 > 10 * 78.54 m^2
+    r = client.post(
+        "/api/hazard-grid",
+        json={
+            "image": MOCK_IMAGE,  # 1000x1000, 0.5 m/px
+            "detections": [],
+            "config": {"grid_rows": 8, "grid_cols": 8},
+        },
+    )
+    assert r.status_code == 200
+    warnings = r.json()["warnings"]
+    assert any("more than 10x the lander footprint area" in w for w in warnings)
+
+
+def test_slope_grid_dimension_mismatch_warning(client):
+    # Hazard grid configured as 4x4, but slope_by_cell supplied as 2x2
+    r = client.post(
+        "/api/hazard-grid",
+        json={
+            "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+            "detections": [],
+            "config": {"grid_rows": 4, "grid_cols": 4},
+            "slope_by_cell": [[2.0, 2.0], [2.0, 2.0]],
+        },
+    )
+    assert r.status_code == 200
+    body = r.json()
+    warnings = body["warnings"]
+    assert any("differ from hazard grid dimensions" in w for w in warnings)
+
+
 def test_analyze_fills_size_m_and_returns_frontend_keys(client):
     body = {
         "image": MOCK_IMAGE,
