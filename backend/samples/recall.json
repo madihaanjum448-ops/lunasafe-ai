@@ -1,0 +1,25 @@
+{
+  "is_mock": true,
+  "validation_site": "MOCK - no real validation done",
+  "bins": [
+    {
+      "min_diameter_m": 0,
+      "max_diameter_m": 2,
+      "recall": 0.5,
+      "n_ground_truth": null
+    },
+    {
+      "min_diameter_m": 2,
+      "max_diameter_m": 4,
+      "recall": 0.75,
+      "n_ground_truth": null
+    },
+    {
+      "min_diameter_m": 4,
+      "max_diameter_m": null,
+      "recall": 0.9,
+      "n_ground_truth": null
+    }
+  ],
+  "notes": "Invented numbers for format testing only."
+}

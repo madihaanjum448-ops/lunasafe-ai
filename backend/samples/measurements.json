@@ -1,0 +1,520 @@
+{
+  "image": {
+    "id": "mock_img_001",
+    "width": 1000,
+    "height": 1000,
+    "pixel_scale_m": 0.5,
+    "sun_elevation_deg": 30.0,
+    "incidence_angle_deg": 60.0,
+    "projection": "MOCK (not a real projection)",
+    "crs": null,
+    "geotransform": null,
+    "metadata_source": "mock"
+  },
+  "hazard_height_threshold_m": 0.5,
+  "measurements": [
+    {
+      "detection_id": 1,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.068,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 3.7,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 2,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.454,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 8.5,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 3,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.887,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 10.0,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 4,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.5,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 5,
+      "diameter_m": 2.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.548,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 1.9,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 6,
+      "diameter_m": 3.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.299,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 4.5,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 7,
+      "diameter_m": 4.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.714,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 9.4,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 8,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.5,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 9,
+      "diameter_m": 4.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.483,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 8.6,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 10,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.511,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 8.7,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 11,
+      "diameter_m": 5.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.107,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 7.3,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 12,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.0,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 13,
+      "diameter_m": 3.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.981,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 3.4,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 14,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.165,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 7.5,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 15,
+      "diameter_m": 2.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.808,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 2.8,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 16,
+      "diameter_m": 4.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.25,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 17,
+      "diameter_m": 5.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.472,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 5.1,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 18,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.992,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 6.9,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 19,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 3.464,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 12.0,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 20,
+      "diameter_m": 3.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.5,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 21,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.165,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 7.5,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 22,
+      "diameter_m": 2.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.52,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 1.8,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 23,
+      "diameter_m": 4.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.876,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 6.5,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 24,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.0,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 25,
+      "diameter_m": 2.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.866,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 3.0,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 26,
+      "diameter_m": 3.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.837,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 2.9,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 27,
+      "diameter_m": 2.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.895,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 3.1,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 28,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.0,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 29,
+      "diameter_m": 2.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.097,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 3.8,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 30,
+      "diameter_m": 3.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.299,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 4.5,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 31,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 3.32,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 11.5,
+      "method": "shadow_geometry",
+      "confidence": "high",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 32,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.0,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 33,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.934,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 6.7,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 34,
+      "diameter_m": 6.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.848,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 6.4,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 35,
+      "diameter_m": 3.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 0.751,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 2.6,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 36,
+      "diameter_m": 4.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.0,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    },
+    {
+      "detection_id": 37,
+      "diameter_m": 5.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.396,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 8.3,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 38,
+      "diameter_m": 5.0,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 2.021,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 7.0,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 39,
+      "diameter_m": 2.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.415,
+      "height_uncertainty_m": 0.289,
+      "shadow_length_px": 4.9,
+      "method": "shadow_geometry",
+      "confidence": "medium",
+      "is_hazardous": true,
+      "warnings": []
+    },
+    {
+      "detection_id": 40,
+      "diameter_m": 3.5,
+      "diameter_uncertainty_m": 0.5,
+      "height_m": 1.75,
+      "height_uncertainty_m": null,
+      "shadow_length_px": null,
+      "method": "diameter_fallback",
+      "confidence": "low",
+      "is_hazardous": true,
+      "warnings": [
+        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+      ]
+    }
+  ],
+  "warnings": [
+    "Uncertainty excludes error in the sun elevation angle itself."
+  ]
+}
