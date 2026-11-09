@@ -487,3 +487,141 @@ def test_slope_endpoint_bad_file(client):
         data={"cell_size_m": "1"},
     )
     assert r.status_code == 422
+
+
+# ---------------- edge cases ----------------
+def test_detection_outside_image_bounds(client):
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [-10, 10, 20, 30], "confidence": 0.9},
+            {"id": 2, "bbox": [10, 20, 150, 40], "confidence": 0.9},
+            {"id": 3, "bbox": [10, -5, 30, 40], "confidence": 0.9},
+            {"id": 4, "bbox": [10, 20, 30, 150], "confidence": 0.9},
+            {"id": 5, "bbox": [20, 20, 10, 10], "confidence": 0.9},  # inverted bbox x2 <= x1
+        ],
+        "config": {"grid_rows": 2, "grid_cols": 2},
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    body = r.json()
+    warnings = body["warnings"]
+    assert any("out-of-image" in w for w in warnings)
+    total_boulders = sum(c["raw_boulder_count"] for c in body["hazard_cells"])
+    assert total_boulders == 0
+
+
+def test_detection_on_cell_boundary(client):
+    # 100x100 px image, 2x2 grid -> boundary at x=50, y=50.
+    # Detection centered exactly at (x=50.0, y=25.0) -> falls into cell (row=0, col=1)
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [45.0, 20.0, 55.0, 30.0], "confidence": 0.9},
+        ],
+        "shadow_lengths_px": {"1": 10.0},
+        "config": {"grid_rows": 2, "grid_cols": 2},
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    body = r.json()
+    cells = {(c["row"], c["col"]): c for c in body["hazard_cells"]}
+    assert cells[(0, 1)]["raw_boulder_count"] == 1
+    assert cells[(0, 0)]["raw_boulder_count"] == 0
+
+
+def test_recall_bin_edges_and_zero_bin(client):
+    from app.services.hazard import _recall_for
+    from app.schemas.contracts import RecallBin, RecallFile
+
+    recall_obj = RecallFile(
+        bins=[
+            RecallBin(bin_min_m=1.0, bin_max_m=2.0, recall=0.5),
+            RecallBin(bin_min_m=2.0, bin_max_m=3.0, recall=0.8),
+            RecallBin(bin_min_m=3.0, bin_max_m=4.0, recall=0.0),  # recall=0 bin
+        ]
+    )
+
+    # Below all bins
+    assert _recall_for(0.99, recall_obj) is None
+    # Lower edge of bin 0 (inclusive)
+    assert _recall_for(1.0, recall_obj) == 0.5
+    # Interior of bin 0
+    assert _recall_for(1.5, recall_obj) == 0.5
+    # Upper edge of bin 0 (exclusive) / lower edge of bin 1 (inclusive)
+    assert _recall_for(2.0, recall_obj) == 0.8
+    # Interior of bin 1
+    assert _recall_for(2.5, recall_obj) == 0.8
+    # Recall=0 bin should return None (not usable / prevents ZeroDivisionError)
+    assert _recall_for(3.5, recall_obj) is None
+
+    # Test through /api/hazard-grid with recall=0 bin
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [10, 10, 17, 17], "confidence": 0.9},  # 7px * 0.5 = 3.5m -> in recall=0 bin
+        ],
+        "shadow_lengths_px": {"1": 10.0},
+        "config": {"grid_rows": 2, "grid_cols": 2, "apply_recall_correction": True},
+        "recall": {
+            "bins": [
+                {"min_diameter_m": 3.0, "max_diameter_m": 4.0, "recall": 0.0}
+            ]
+        },
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    cell = r.json()["hazard_cells"][0]
+    # Recall was 0, so correction could not be applied; count remains raw 1
+    assert cell["corrected_boulder_count"] == 1.0
+    assert cell["recall_corrected"] is False
+
+
+def test_nan_inf_inputs_raise_or_handled(client):
+    import math
+    import pytest
+    from app.services.hazard import (
+        footprint_area_m2,
+        poisson_hazard_probability,
+        suggest_grid_dimensions,
+    )
+    from app.services.measurement import height_from_shadow
+
+    # 1. Scientific math helpers reject NaN/inf
+    with pytest.raises(ValueError, match="must be positive"):
+        footprint_area_m2(float("nan"))
+    with pytest.raises(ValueError, match="must be positive"):
+        footprint_area_m2(float("inf"))
+
+    with pytest.raises(ValueError, match="must be non-negative"):
+        poisson_hazard_probability(float("nan"), 100.0)
+    with pytest.raises(ValueError, match="must be positive"):
+        poisson_hazard_probability(0.1, float("inf"))
+
+    with pytest.raises(ValueError, match="positive finite"):
+        suggest_grid_dimensions(100, 100, float("nan"), 10.0)
+    with pytest.raises(ValueError, match="positive finite"):
+        suggest_grid_dimensions(100, 100, 0.5, float("inf"))
+
+    with pytest.raises(ValueError, match="must be finite"):
+        height_from_shadow(float("nan"), 0.5, 30.0)
+    with pytest.raises(ValueError, match="must be finite"):
+        height_from_shadow(10.0, float("inf"), 30.0)
+
+    # 2. Hazard grid service with NaN and Inf in slope_by_cell handles them safely
+    from app.services.hazard import build_hazard_grid
+    from app.schemas.contracts import AnalysisConfig, ImageInfo
+
+    img_info = ImageInfo(**{**MOCK_IMAGE, "width": 100, "height": 100})
+    grid_nan = build_hazard_grid(
+        image=img_info,
+        detections=[],
+        measurements=[],
+        config=AnalysisConfig(grid_rows=2, grid_cols=2),
+        slope_by_cell=[[float("nan"), 5.0], [float("inf"), 5.0]],
+    )
+    cell_00 = [c for c in grid_nan.cells if c.row == 0 and c.col == 0][0]
+    assert cell_00.slope_gate == "not_assessed"
+    cell_10 = [c for c in grid_nan.cells if c.row == 1 and c.col == 0][0]
+    assert cell_10.slope_gate == "not_assessed"
+    assert any("Invalid slope value" in w for w in grid_nan.warnings)
