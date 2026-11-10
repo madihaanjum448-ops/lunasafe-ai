@@ -10,6 +10,9 @@ import {
   MULTIPLE_FILES_NOTE,
   isValidFileType,
 } from '../constants/upload';
+import { normalizeResult } from '../constants/schema';
+
+const initialNormalizedSample = normalizeResult(sampleResult);
 
 export function MissionProvider({ children }) {
   // Currently loaded image state
@@ -26,10 +29,10 @@ export function MissionProvider({ children }) {
     isSample: true,
   });
 
-  // Detection and hazard data from mock source
-  const [detections, setDetections] = useState(sampleResult.detections);
-  const [hazardCells, setHazardCells] = useState(sampleResult.hazard_cells);
-  const [warnings, setWarnings] = useState(sampleResult.warnings);
+  // Detection and hazard data from normalized source
+  const [detections, setDetections] = useState(initialNormalizedSample.detections);
+  const [hazardCells, setHazardCells] = useState(initialNormalizedSample.hazardCells);
+  const [warnings, setWarnings] = useState(initialNormalizedSample.warnings);
 
   // Confidence threshold filter for boulder detections (0.00 - 1.00)
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.60);
@@ -66,9 +69,9 @@ export function MissionProvider({ children }) {
       fileSize: '12.8 MB',
       isSample: true,
     });
-    setDetections(sampleResult.detections);
-    setHazardCells(sampleResult.hazard_cells);
-    setWarnings(sampleResult.warnings);
+    setDetections(initialNormalizedSample.detections);
+    setHazardCells(initialNormalizedSample.hazardCells);
+    setWarnings(initialNormalizedSample.warnings);
     setSelectedCell(null);
     setUploadError(null);
     setUploadNote(null);

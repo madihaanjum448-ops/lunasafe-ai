@@ -1,8 +1,13 @@
 import React from 'react';
 import { useMission } from '../context/useMission';
+import {
+  HAZARD_LABELS,
+  getLabelColorConfig,
+  CANDIDATE_ONLY_NOTE,
+} from '../constants/schema';
 
 /**
- * Format helper adhering strictly to: "If a value is null, show 'Unavailable'"
+ * Format helper adhering strictly to: "Unavailable values are null. NEVER replace null with a made-up number; show 'Unavailable'."
  */
 function displayValue(val, unit = '') {
   if (val === null || val === undefined) {
@@ -43,38 +48,13 @@ export default function RegionExplanationPanel() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
         </div>
-        <h4 className="text-slate-200 font-semibold text-sm">Select a Hazard Cell</h4>
-        <p className="text-xs text-slate-400 mt-1 max-w-xs">
-          Click on any grid cell on the hazard map to inspect terrain safety metrics, boulder density, and landing recommendations.
+        <h4 className="text-slate-200 font-semibold text-sm">Select a Region Cell</h4>
+        <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
+          Click any grid cell on the hazard map to inspect candidate region classification, probability, boulder counts, and slope telemetry.
         </p>
       </div>
     );
   }
-
-  // Safety class badge styling
-  const getClassBadge = (cellClass) => {
-    switch (cellClass) {
-      case 'safe':
-        return (
-          <span className="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-xs font-bold uppercase tracking-wider">
-            Safe Landing Zone
-          </span>
-        );
-      case 'caution':
-        return (
-          <span className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-xs font-bold uppercase tracking-wider">
-            Caution Advised
-          </span>
-        );
-      case 'unsafe':
-      default:
-        return (
-          <span className="px-2.5 py-1 rounded-md bg-red-500/20 text-red-300 border border-red-500/40 font-mono text-xs font-bold uppercase tracking-wider">
-            Unsafe / High Hazard
-          </span>
-        );
-    }
-  };
 
   // Find adjacent cells for quick navigation
   const currentIndex = hazardCells.findIndex(
@@ -93,26 +73,39 @@ export default function RegionExplanationPanel() {
     }
   };
 
-  // Physical ground coverage calculation if scale is available
-  const cellPxWidth = imageMeta.width / 8;
-  const cellPxHeight = imageMeta.height / 8;
-  const groundMeters =
-    imageMeta.pixelScaleM !== null
-      ? `${(cellPxWidth * imageMeta.pixelScaleM).toFixed(0)}m × ${(cellPxHeight * imageMeta.pixelScaleM).toFixed(0)}m`
-      : 'Unavailable';
+  const config = getLabelColorConfig(selectedCell.label);
+  const isNotAssessed = selectedCell.label === HAZARD_LABELS.NOT_ASSESSED || selectedCell.probability === null;
+
+  // Derive region-specific warnings
+  const regionWarnings = [];
+  if (isNotAssessed) {
+    regionWarnings.push('Region coverage incomplete; probability calculation cannot be performed.');
+  }
+  if (selectedCell.slopeDeg === null || selectedCell.slopeDeg === undefined) {
+    regionWarnings.push('Slope data unavailable for this sector; classified as Caution.');
+  }
+  if (selectedCell.largestHeightM === null && selectedCell.rawCount > 0) {
+    regionWarnings.push('Boulder height measurement unavailable for detected obstacles.');
+  }
+  if (selectedCell.slopeDeg !== null && selectedCell.slopeDeg > 15) {
+    regionWarnings.push(`High slope gradient (${selectedCell.slopeDeg}°) exceeds nominal touchdown threshold.`);
+  }
 
   return (
     <aside className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 backdrop-blur-md shadow-2xl flex flex-col gap-4 text-sm animate-in fade-in slide-in-from-right-4 duration-200">
-      {/* Header with Coordinates and Close */}
+      {/* Header with Coordinates, Mock Data Badge, and Close */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
               Sector [R{selectedCell.row}, C{selectedCell.col}]
             </span>
-            <span className="text-slate-400 text-xs">Cell #{currentIndex + 1} of 64</span>
+            <span className="text-slate-400 text-xs">Cell #{currentIndex + 1} of {hazardCells.length}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+              Mock data
+            </span>
           </div>
-          <h3 className="text-base font-bold text-white mt-1">Region Safety Assessment</h3>
+          <h3 className="text-base font-bold text-white">Region Evaluation Details</h3>
         </div>
 
         <button
@@ -127,93 +120,147 @@ export default function RegionExplanationPanel() {
         </button>
       </div>
 
-      {/* Safety Class Badge & Hazard Score */}
-      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-        <div>
-          <span className="text-xs text-slate-400 block mb-1">Safety Classification</span>
-          {getClassBadge(selectedCell.class)}
+      {/* Candidate Advisory Note */}
+      <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-amber-300/90 text-xs flex items-center gap-2">
+        <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="font-medium text-[11px] leading-tight">{CANDIDATE_ONLY_NOTE}</span>
+      </div>
+
+      {/* 1. Hazard Section */}
+      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+            Hazard
+          </span>
+          <span className={`px-2.5 py-1 rounded-md font-mono text-xs font-bold uppercase tracking-wider ${config.badgeClass}`}>
+            {selectedCell.label}
+          </span>
         </div>
 
-        <div className="text-right">
-          <span className="text-xs text-slate-400 block mb-1">Hazard Score</span>
-          <div className="text-xl font-bold font-mono text-white">
-            {selectedCell.score !== null && selectedCell.score !== undefined ? (
-              <span className={selectedCell.score > 0.7 ? 'text-red-400' : selectedCell.score > 0.35 ? 'text-amber-400' : 'text-emerald-400'}>
-                {selectedCell.score.toFixed(2)}
-              </span>
-            ) : (
-              displayValue(null)
-            )}
-          </div>
+        <div className="pt-1.5 border-t border-slate-800/80 text-xs">
+          <span className="text-[11px] text-slate-400 block mb-1">Hazard Probability:</span>
+          {!isNotAssessed && selectedCell.probability !== null ? (
+            <div className="font-mono text-white text-lg font-bold">
+              {(selectedCell.probability * 100).toFixed(0)}%
+              {selectedCell.intervalLow !== null && selectedCell.intervalHigh !== null && (
+                <span className="text-slate-400 font-normal text-xs ml-2">
+                  ({(selectedCell.intervalLow * 100).toFixed(0)}% to {(selectedCell.intervalHigh * 100).toFixed(0)}%)
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="text-amber-400/90 font-mono text-xs leading-relaxed">
+              Not assessed — probability unavailable due to incomplete sensor coverage or boundary limits.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Boulder Count */}
-        <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800/80">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Boulder Count
+      {/* 2. Boulders Section */}
+      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          Boulders
+        </span>
+
+        <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+          <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
+            <span className="text-[11px] text-slate-400 block mb-0.5">Raw Count</span>
+            <div className="text-base font-mono">
+              {displayValue(selectedCell.rawCount)}
+            </div>
           </div>
-          <div className="text-base font-mono">
-            {displayValue(selectedCell.boulder_count)}
+
+          <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
+            <span className="text-[11px] text-slate-400 block mb-0.5">Corrected Count</span>
+            <div className="text-base font-mono">
+              {displayValue(selectedCell.correctedCount)}
+            </div>
           </div>
         </div>
 
-        {/* Largest Boulder */}
-        <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800/80">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+        <p className="text-[11px] text-slate-400 leading-snug pt-0.5 italic">
+          Corrected for detection recall (adjusts raw detections for estimated model recall rate under lighting and resolution limits).
+        </p>
+      </div>
+
+      {/* 3. Height & 4. Slope Grid */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {/* Height Section */}
+        <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1.5">
+          <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold flex items-center gap-1">
             <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
-            Largest Boulder
-          </div>
-          <div className="text-base font-mono">
-            {displayValue(selectedCell.largest_boulder_m, 'm')}
+            Height
+          </span>
+          <div>
+            <span className="text-[11px] text-slate-400 block">Largest Height:</span>
+            {selectedCell.largestHeightM !== null && selectedCell.largestHeightM !== undefined ? (
+              <span className="font-mono text-slate-100 font-bold text-base">
+                {selectedCell.largestHeightM} m
+              </span>
+            ) : (
+              <span className="text-amber-400 italic text-xs font-mono">Height unavailable</span>
+            )}
           </div>
         </div>
 
-        {/* Boulder Density */}
-        <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800/80">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+        {/* Slope Section */}
+        <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1.5">
+          <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold flex items-center gap-1">
             <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            Boulder Density
+            Slope
+          </span>
+          <div>
+            <span className="text-[11px] text-slate-400 block">Gradient:</span>
+            {selectedCell.slopeDeg !== null && selectedCell.slopeDeg !== undefined ? (
+              <span className="font-mono text-slate-100 font-bold text-base">
+                {selectedCell.slopeDeg}°
+              </span>
+            ) : (
+              <span className="text-amber-400 italic text-xs font-mono">Slope unavailable</span>
+            )}
           </div>
-          <div className="text-base font-mono">
-            {displayValue(selectedCell.density, 'boulders/100m²')}
-          </div>
-        </div>
-
-        {/* Ground Footprint */}
-        <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800/80">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            Cell Ground Area
-          </div>
-          <div className="text-xs font-mono text-slate-200">
-            {groundMeters}
+          <div className="text-[11px] font-mono text-slate-400">
+            Status: <span className="text-slate-200 font-semibold">{selectedCell.slopeStatus || 'Unavailable'}</span>
           </div>
         </div>
       </div>
 
-      {/* Explanation Text */}
-      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
-        <span className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
-          <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      {/* 5. Warnings Relevant to this Region */}
+      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          Terrain Analysis & Explanation
+          Warnings Relevant to Region
         </span>
-        <p className="text-xs text-slate-300 leading-relaxed">
-          {selectedCell.explanation || <span className="text-amber-400 italic">Unavailable</span>}
-        </p>
+
+        {regionWarnings.length === 0 ? (
+          <div className="flex items-center gap-2 text-xs text-emerald-400 pt-0.5">
+            <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-slate-300">No specific region warnings. All sensor inputs nominal.</span>
+          </div>
+        ) : (
+          <ul className="space-y-1.5 text-xs pt-0.5">
+            {regionWarnings.map((warning, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-amber-300 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
+                <span className="leading-snug">{warning}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Navigation Footer */}

@@ -83,7 +83,8 @@ export default function DetectionOverlay({
 
         // Label content and dimensions
         const confPct  = `${(d.confidence * 100).toFixed(0)}%`;
-        const sizeText = d.size_m !== null ? `${d.size_m}m` : null;
+        const dia      = d.diameterM ?? d.diameter_m;
+        const sizeText = dia !== null && dia !== undefined ? `${dia}m` : null;
         const labelTxt = sizeText ? `${confPct} • ${sizeText}` : confPct;
         const badgeW   = Math.max(35, Math.round((labelTxt.length * 13 + 22) * scale));
 

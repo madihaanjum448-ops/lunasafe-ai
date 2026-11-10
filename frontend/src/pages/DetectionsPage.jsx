@@ -266,17 +266,55 @@ export default function DetectionsPage() {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-                    <span className="text-slate-400">Estimated Size:</span>
-                    {selectedDetection.size_m !== null ? (
-                      <span className="font-mono font-bold text-slate-200">{selectedDetection.size_m} meters</span>
+                  {/* Diameter */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Diameter:</span>
+                    {selectedDetection.diameterM !== null && selectedDetection.diameterM !== undefined ? (
+                      <span className="font-mono font-bold text-slate-200">{selectedDetection.diameterM} m</span>
                     ) : (
                       <span className="font-mono italic text-amber-400">Unavailable</span>
                     )}
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1.5">
-                    <span className="text-slate-400 block">Bounding Box [x1, y1, x2, y2]:</span>
+                  {/* Shadow Length */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Shadow Length:</span>
+                    {selectedDetection.shadowLengthM !== null && selectedDetection.shadowLengthM !== undefined ? (
+                      <span className="font-mono font-bold text-slate-200">{selectedDetection.shadowLengthM} m</span>
+                    ) : (
+                      <span className="font-mono italic text-amber-400">Unavailable</span>
+                    )}
+                  </div>
+
+                  {/* Height & Uncertainty */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Height:</span>
+                    {selectedDetection.heightM !== null && selectedDetection.heightM !== undefined ? (
+                      <span className="font-mono font-bold text-slate-200">
+                        {selectedDetection.heightM} m
+                        {selectedDetection.heightUncertaintyM !== null && selectedDetection.heightUncertaintyM !== undefined && (
+                          <span className="text-slate-400 font-normal text-[11px] ml-1">
+                            (±{selectedDetection.heightUncertaintyM} m)
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="font-mono italic text-amber-400">Unavailable</span>
+                    )}
+                  </div>
+
+                  {/* Height Method */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Height Method:</span>
+                    {selectedDetection.heightMethod ? (
+                      <span className="font-mono text-cyan-300">{selectedDetection.heightMethod}</span>
+                    ) : (
+                      <span className="font-mono italic text-amber-400">Unavailable</span>
+                    )}
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1">
+                    <span className="text-slate-400 block text-[11px]">Bounding Box [x1, y1, x2, y2]:</span>
                     <div className="font-mono text-[11px] text-cyan-300 bg-slate-900 p-2 rounded border border-slate-800">
                       [{selectedDetection.bbox.join(', ')}]
                     </div>

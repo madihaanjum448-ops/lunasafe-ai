@@ -17,7 +17,7 @@ export default function HazardMapPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs uppercase tracking-widest text-cyan-400 font-mono font-semibold">
-              Landing Safety Analytics
+              Candidate Hazard Analytics
             </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold tracking-wide">
               {imageMeta.isSample ? 'Mock Data' : 'User Upload'}
@@ -28,7 +28,7 @@ export default function HazardMapPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
             {imageMeta.isSample
-              ? '8×8 topological landing zone grid categorized into safe (green), caution (yellow), and unsafe (red). Click any cell to inspect hazard telemetry and site clearance explanations.'
+              ? '8×8 candidate evaluation grid categorized into Safe candidate (green), Caution (yellow), Unsafe candidate (red), and Not assessed (grey). Candidate regions only. This is not a landing safety certification.'
               : 'Pan and zoom across your uploaded lunar image.'}
           </p>
         </div>
