@@ -19,3 +19,10 @@ venv/
 outputs/checkpoints/
 outputs/tensorboard/
 outputs/wandb/
+
+# Local sample images
+data/sample/
+
+# Model checkpoints
+models/*.pt
+models/*.pth
