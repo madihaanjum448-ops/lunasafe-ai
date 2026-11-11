@@ -39,6 +39,7 @@ from app.schemas.contracts import (
     MeasurementMethod,
     RecallFile,
 )
+from app.services.classification import classify_cell, explain_cell
 
 
 # ================================================================
@@ -712,84 +713,7 @@ def build_hazard_grid(
                 )
 
             # ----------------------------------------------------
-            # 4F. Classification rules
-            # ----------------------------------------------------
-
-            if slope_gate == "fail":
-
-                classification = HazardClass.unsafe
-                reasons.append("slope_gate_failed")
-
-            elif probability >= config.unsafe_p_hazard:
-
-                classification = HazardClass.unsafe
-                reasons.append(
-                    "p_hazard_at_or_above_unsafe_threshold"
-                )
-
-            elif probability >= config.caution_p_hazard:
-
-                classification = HazardClass.caution
-                reasons.append(
-                    "p_hazard_at_or_above_caution_threshold"
-                )
-
-            else:
-
-                classification = HazardClass.safe
-                reasons.append(
-                    "p_hazard_below_caution_threshold"
-                )
-
-            # ----------------------------------------------------
-            # 4G. Prevent unsupported Safe classifications
-            # ----------------------------------------------------
-
-            if (
-                classification == HazardClass.safe
-                and slope_gate == "not_assessed"
-            ):
-                classification = HazardClass.caution
-                reasons.append(
-                    "downgraded_slope_not_assessed"
-                )
-
-            if (
-                classification == HazardClass.safe
-                and unknown_height > 0
-            ):
-                classification = HazardClass.caution
-                reasons.append(
-                    "downgraded_height_unknown"
-                )
-
-            if (
-                classification == HazardClass.safe
-                and fallback_in_cell
-            ):
-                classification = HazardClass.caution
-                reasons.append(
-                    "downgraded_fallback_height"
-                )
-
-            # ----------------------------------------------------
-            # 4H. Generate explanation
-            # ----------------------------------------------------
-
-            explanation = _explain(
-                classification=classification,
-                probability=probability,
-                hazardous_count=raw_hazardous,
-                corrected_count=corrected_hazardous,
-                total_count=len(cell_detections),
-                slope=slope,
-                slope_gate=slope_gate,
-                config=config,
-                missing=missing,
-            )
-
-            # ----------------------------------------------------
-            # 4I. Bootstrap uncertainty interval
+            # 4F. Bootstrap uncertainty interval
             # ----------------------------------------------------
 
             interval_low, interval_high, boot_warnings, boot_missing = (
@@ -809,6 +733,37 @@ def build_hazard_grid(
                 low_count_cells += 1
             missing.extend(boot_missing)
             cell_warnings = list(boot_warnings)
+
+            # ----------------------------------------------------
+            # 4G. Classification rules (pure classification service)
+            # ----------------------------------------------------
+
+            classification, reasons = classify_cell(
+                p_hazard=probability,
+                slope_gate=slope_gate,
+                unknown_height_count=unknown_height,
+                fallback_in_cell=fallback_in_cell,
+                config=config,
+                slope_deg=slope,
+                interval_high=interval_high,
+            )
+
+            # ----------------------------------------------------
+            # 4H. Generate explanation
+            # ----------------------------------------------------
+
+            explanation = explain_cell(
+                classification=classification,
+                probability=probability,
+                hazardous_count=raw_hazardous,
+                corrected_count=corrected_hazardous,
+                total_count=len(cell_detections),
+                slope=slope,
+                slope_gate=slope_gate,
+                config=config,
+                missing=missing,
+                reasons=reasons,
+            )
 
             # ----------------------------------------------------
             # 4J. Store cell result
@@ -937,56 +892,4 @@ def build_hazard_grid(
 # 5. HUMAN-READABLE CELL EXPLANATION
 # ================================================================
 
-def _explain(
-    classification,
-    probability,
-    hazardous_count,
-    corrected_count,
-    total_count,
-    slope,
-    slope_gate,
-    config,
-    missing,
-) -> str:
-    """Generate a human-readable explanation for a grid cell."""
-
-    label = CLASS_LABELS[classification]
-
-    parts = [
-        (
-            f"{label}: P(hazard) = {probability:.1%} "
-            f"for a {config.lander_footprint_diameter_m:g} m "
-            f"footprint. There are {hazardous_count} confirmed "
-            f"hazardous boulders among {total_count} detected boulders."
-        )
-    ]
-
-    if config.apply_recall_correction:
-        parts.append(
-            f"The recall-adjusted hazardous count is "
-            f"{corrected_count:.2f}."
-        )
-
-    if slope_gate == "fail":
-        parts.append(
-            f"Slope {slope:.1f} degrees exceeds the "
-            f"{config.slope_gate_deg:g} degree slope gate."
-        )
-
-    elif slope_gate == "pass":
-        parts.append(
-            f"Slope {slope:.1f} degrees is within the "
-            f"{config.slope_gate_deg:g} degree slope gate."
-        )
-
-    else:
-        parts.append("Slope was not assessed.")
-
-    if missing:
-        parts.append(
-            "Missing/uncertain inputs: "
-            + "; ".join(missing)
-            + "."
-        )
-
-    return " ".join(parts)
+_explain = explain_cell
