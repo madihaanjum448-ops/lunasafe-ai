@@ -10,6 +10,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    model_validator,
 )
 
 
@@ -352,6 +353,44 @@ class AnalysisConfig(BaseModel):
         default=42,
         description="Random seed for bootstrap reproducibility. Set to None for unseeded randomness.",
     )
+
+    slope_margin_deg: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=90.0,
+        description="PLACEHOLDER / Proposal (unconfirmed): Safety margin below slope_gate_deg. Passing cells with slope > (slope_gate_deg - slope_margin_deg) are downgraded to Caution.",
+    )
+
+    use_interval_upper_bound: bool = Field(
+        default=False,
+        description="PLACEHOLDER / Proposal (unconfirmed): When True, Safe candidates whose interval_high >= unsafe_p_hazard are downgraded to Caution.",
+    )
+
+    slope_statistic: str = Field(
+        default="max",
+        description="Aggregation statistic for DEM slope grid reduction: 'max' (conservative default) or 'mean'.",
+    )
+
+    @model_validator(mode="after")
+    def validate_thresholds(self) -> "AnalysisConfig":
+        if not (0.0 <= self.caution_p_hazard <= 1.0):
+            raise ValueError(
+                f"caution_p_hazard ({self.caution_p_hazard}) must be between 0.0 and 1.0."
+            )
+        if not (0.0 <= self.unsafe_p_hazard <= 1.0):
+            raise ValueError(
+                f"unsafe_p_hazard ({self.unsafe_p_hazard}) must be between 0.0 and 1.0."
+            )
+        if self.caution_p_hazard >= self.unsafe_p_hazard:
+            raise ValueError(
+                f"caution_p_hazard ({self.caution_p_hazard}) must be strictly less than "
+                f"unsafe_p_hazard ({self.unsafe_p_hazard})."
+            )
+        if self.slope_statistic not in ("max", "mean"):
+            raise ValueError(
+                f"slope_statistic must be 'max' or 'mean', got '{self.slope_statistic}'."
+            )
+        return self
 
     @property
     def confidence_min(self) -> float:
