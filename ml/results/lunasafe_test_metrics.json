@@ -1,0 +1,17 @@
+{
+    "model": "YOLOv8n-seg",
+    "architecture": "YOLOv8 Nano Segmentation",
+    "best_epoch": 17,
+    "epochs_completed": 27,
+    "test_images": 468,
+    "test_instances": 20989,
+    "box_precision": 0.602,
+    "box_recall": 0.553,
+    "box_map50": 0.562,
+    "box_map50_95": 0.196,
+    "mask_precision": 0.34,
+    "mask_recall": 0.34,
+    "mask_map50": 0.22,
+    "mask_map50_95": 0.0505,
+    "checkpoint": "lunasafe_yolov8n_seg_best.pt"
+}

@@ -1,0 +1,15 @@
+{
+    "model": "YOLOv8n-seg",
+    "dataset_split": "test",
+    "images": 468,
+    "confidence_threshold": 0.25,
+    "mask_iou_threshold": 0.5,
+    "ground_truth_objects": 20989,
+    "predictions": 25352,
+    "true_positives": 13362,
+    "false_positives": 11990,
+    "false_negatives": 7627,
+    "precision": 0.5270590091511518,
+    "recall": 0.6366191814760113,
+    "f1_score": 0.5766815562892472
+}

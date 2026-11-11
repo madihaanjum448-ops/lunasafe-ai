@@ -1,0 +1,19 @@
+{
+    "data": "/kaggle/working/lunasafe_yolo_dataset/lunasafe.yaml",
+    "epochs": 50,
+    "imgsz": 640,
+    "batch": 8,
+    "optimizer": "SGD",
+    "lr0": 0.01,
+    "patience": 10,
+    "workers": 2,
+    "device": 0,
+    "project": "/kaggle/working/lunasafe_runs",
+    "name": "yolov8n_seg_baseline",
+    "exist_ok": true,
+    "pretrained": true,
+    "plots": true,
+    "save": true,
+    "seed": 2002,
+    "deterministic": true
+}
