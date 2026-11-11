@@ -203,6 +203,10 @@ class HazardCell(BaseModel):
 
     reasons: List[str] = Field(default_factory=list)
     missing_inputs: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Cell-specific warnings (e.g. low-count parametric resampling).",
+    )
 
     # Frontend-compatible names.
     # These remain optional until their calculations are implemented.
@@ -328,6 +332,25 @@ class AnalysisConfig(BaseModel):
 
     pixel_uncertainty_px: float = Field(
         default=1.0, ge=0
+    )
+
+    bootstrap_n: int = Field(
+        default=1000,
+        ge=10,
+        le=10000,
+        description="Number of bootstrap replicates for estimating uncertainty intervals.",
+    )
+
+    bootstrap_ci: float = Field(
+        default=0.90,
+        gt=0,
+        lt=1.0,
+        description="Confidence level for bootstrap intervals (default 0.90 for 90% CI).",
+    )
+
+    bootstrap_seed: Optional[int] = Field(
+        default=42,
+        description="Random seed for bootstrap reproducibility. Set to None for unseeded randomness.",
     )
 
     @property

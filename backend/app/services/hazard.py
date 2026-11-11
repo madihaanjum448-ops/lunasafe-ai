@@ -25,6 +25,8 @@ Important limitations:
 import math
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
+
 from app.schemas.contracts import (
     CLASS_LABELS,
     AnalysisConfig,
@@ -170,6 +172,132 @@ def _corrected_count(
         was_capped = True
 
     return 1.0 / effective_recall, True, was_capped
+
+
+def compute_bootstrap_interval(
+    cell_detections: List[Detection],
+    cell_measurements: List[Optional[Measurement]],
+    cell_area_m2: float,
+    footprint_area_m2: float,
+    corrected_hazardous: float,
+    p_hazard: float,
+    config: AnalysisConfig,
+    recall: Optional[RecallFile],
+    rng: np.random.Generator,
+) -> Tuple[Optional[float], Optional[float], List[str], List[str]]:
+    """
+    Compute bootstrap uncertainty interval [interval_low, interval_high] for a cell.
+
+    Returns:
+        (interval_low, interval_high, cell_warnings, missing_inputs)
+
+    Rules:
+    - If cell has 0 detections: interval is [0.0, 0.0].
+    - If cell has detections but NO genuine shadow-measured heights (fallback only):
+      interval is (None, None) and missing_inputs records that heights are unmeasured.
+    - If cell has < 5 detections: parametric Poisson(corrected_hazardous) resampling is used
+      to avoid bootstrap collapse on small samples. A cell warning is generated.
+    - If cell has >= 5 detections:
+      (a) for each measured detection, draw height ~ Normal(height_m, height_uncertainty_m)
+          and re-decide hazardous vs not (height >= hazard_height_threshold_m);
+      (b) resample cell's detections with replacement;
+      (c) apply recall weights (with recall_floor cap);
+      (d) recompute rho and P across bootstrap replicates and take percentile interval.
+    - Guarantees interval_low <= p_hazard <= interval_high.
+    """
+    cell_warnings: List[str] = []
+    missing_inputs: List[str] = []
+
+    if len(cell_detections) == 0:
+        return 0.0, 0.0, cell_warnings, missing_inputs
+
+    has_shadow = any(
+        m is not None
+        and m.method == MeasurementMethod.shadow_geometry
+        and m.height_m is not None
+        for m in cell_measurements
+    )
+    if not has_shadow:
+        missing_inputs.append(
+            "uncertainty interval unavailable: boulder heights are unmeasured fallback assumptions"
+        )
+        return None, None, cell_warnings, missing_inputs
+
+    alpha_low = (1.0 - config.bootstrap_ci) / 2.0 * 100.0
+    alpha_high = (1.0 + config.bootstrap_ci) / 2.0 * 100.0
+    b_reps = config.bootstrap_n
+
+    if len(cell_detections) < 5:
+        # Parametric Poisson resampling for low counts (< 5 detections)
+        k_samples = rng.poisson(lam=corrected_hazardous, size=b_reps)
+        rho_samples = k_samples / cell_area_m2
+        p_samples = 1.0 - np.exp(-rho_samples * footprint_area_m2)
+        p_low = float(np.percentile(p_samples, alpha_low))
+        p_high = float(np.percentile(p_samples, alpha_high))
+        cell_warnings.append(
+            f"Low detection count ({len(cell_detections)} < 5): uncertainty interval "
+            f"estimated via parametric Poisson({corrected_hazardous:.2f}) resampling."
+        )
+    else:
+        # Non-parametric bootstrap with height measurement uncertainty
+        m_count = len(cell_detections)
+        mu = np.zeros(m_count, dtype=float)
+        sigma = np.zeros(m_count, dtype=float)
+        weights = np.zeros(m_count, dtype=float)
+
+        for j in range(m_count):
+            meas = cell_measurements[j]
+            if (
+                meas is not None
+                and meas.method == MeasurementMethod.shadow_geometry
+                and meas.height_m is not None
+            ):
+                mu[j] = meas.height_m
+                sigma[j] = (
+                    meas.height_uncertainty_m
+                    if (
+                        meas.height_uncertainty_m is not None
+                        and meas.height_uncertainty_m > 0
+                    )
+                    else 0.0
+                )
+                if config.apply_recall_correction and recall is not None:
+                    w, _, _ = _corrected_count(
+                        meas.diameter_m, recall, recall_floor=config.recall_floor
+                    )
+                    weights[j] = w
+                else:
+                    weights[j] = 1.0
+            else:
+                mu[j] = -1.0
+                sigma[j] = 0.0
+                weights[j] = 0.0
+
+        if np.any(sigma > 0):
+            heights_reps = rng.normal(loc=mu, scale=sigma, size=(b_reps, m_count))
+        else:
+            heights_reps = np.broadcast_to(mu, (b_reps, m_count))
+
+        is_haz = heights_reps >= config.hazard_height_threshold_m
+        haz_weights = is_haz * weights
+
+        resample_idx = rng.integers(0, m_count, size=(b_reps, m_count))
+        resampled_w = np.take_along_axis(haz_weights, resample_idx, axis=1)
+        k_boot = np.sum(resampled_w, axis=1)
+        rho_boot = k_boot / cell_area_m2
+        p_boot = 1.0 - np.exp(-rho_boot * footprint_area_m2)
+
+        p_low = float(np.percentile(p_boot, alpha_low))
+        p_high = float(np.percentile(p_boot, alpha_high))
+
+    interval_low = round(max(0.0, min(p_low, p_hazard)), 4)
+    interval_high = round(min(1.0, max(p_high, p_hazard)), 4)
+    if interval_low > p_hazard:
+        interval_low = p_hazard
+    if interval_high < p_hazard:
+        interval_high = p_hazard
+
+    return interval_low, interval_high, cell_warnings, missing_inputs
 
 
 # ================================================================
@@ -378,6 +506,8 @@ def build_hazard_grid(
     uncorrected_bins = 0
     capped_bins = 0
     any_fallback = False
+    low_count_cells = 0
+    rng = np.random.default_rng(config.bootstrap_seed)
 
     for row in range(rows):
 
@@ -659,7 +789,29 @@ def build_hazard_grid(
             )
 
             # ----------------------------------------------------
-            # 4I. Store cell result
+            # 4I. Bootstrap uncertainty interval
+            # ----------------------------------------------------
+
+            interval_low, interval_high, boot_warnings, boot_missing = (
+                compute_bootstrap_interval(
+                    cell_detections=cell_detections,
+                    cell_measurements=cell_measurements,
+                    cell_area_m2=cell_area,
+                    footprint_area_m2=footprint_area,
+                    corrected_hazardous=corrected_hazardous,
+                    p_hazard=probability,
+                    config=config,
+                    recall=recall,
+                    rng=rng,
+                )
+            )
+            if boot_warnings:
+                low_count_cells += 1
+            missing.extend(boot_missing)
+            cell_warnings = list(boot_warnings)
+
+            # ----------------------------------------------------
+            # 4J. Store cell result
             # ----------------------------------------------------
 
             probability_value = round(probability, 4)
@@ -701,13 +853,14 @@ def build_hazard_grid(
 
                     # Frontend-compatible fields.
                     probability=probability_value,
-                    interval_low=None,
-                    interval_high=None,
+                    interval_low=interval_low,
+                    interval_high=interval_high,
                     label=CLASS_LABELS[classification],
                     raw_count=len(cell_detections),
                     corrected_count=corrected_value,
                     largest_height_m=largest_height,
                     largest_height_method=largest_height_method,
+                    warnings=cell_warnings,
                 )
             )
 
@@ -725,6 +878,12 @@ def build_hazard_grid(
         warnings.append(
             f"Recall floor ({config.recall_floor}) applied to {capped_bins} boulder(s) "
             f"to prevent weight explosion (weight capped at {1.0 / config.recall_floor:.1f})."
+        )
+
+    if low_count_cells > 0:
+        warnings.append(
+            f"Parametric Poisson resampling was used for uncertainty intervals in "
+            f"{low_count_cells} cell(s) with < 5 detections."
         )
 
     if uncorrected_bins > 0:

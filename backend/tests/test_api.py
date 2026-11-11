@@ -763,3 +763,128 @@ def test_recall_correction_cap_and_largest_height_method(client):
     r_fb = client.post("/api/hazard-grid", json=req_fallback)
     assert r_fb.status_code == 200
     assert r_fb.json()["hazard_cells"][0]["largest_height_method"] == "diameter_fallback"
+
+
+# ---------------- bootstrap uncertainty interval ----------------
+def test_bootstrap_uncertainty_interval_zero_boulder(client):
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [],
+        "config": {"grid_rows": 2, "grid_cols": 2, "bootstrap_seed": 42},
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    for cell in r.json()["hazard_cells"]:
+        assert cell["interval_low"] == 0.0
+        assert cell["interval_high"] == 0.0
+        assert cell["p_hazard"] == 0.0
+
+
+def test_bootstrap_uncertainty_interval_fallback_only_returns_null(client):
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [10, 10, 20, 20], "confidence": 0.95},
+        ],
+        "config": {"grid_rows": 2, "grid_cols": 2},
+    }
+    r = client.post("/api/hazard-grid", json=req)
+    assert r.status_code == 200
+    c00 = r.json()["hazard_cells"][0]
+    assert c00["interval_low"] is None
+    assert c00["interval_high"] is None
+    assert any("uncertainty interval unavailable" in m for m in c00["missing_inputs"])
+
+
+def test_bootstrap_uncertainty_interval_brackets_p_hazard_and_reproducible(client):
+    # 6 detections in cell (0, 0)
+    dets = [
+        {"id": i, "bbox": [5 + i * 5, 5 + i * 5, 9 + i * 5, 9 + i * 5], "confidence": 0.9}
+        for i in range(1, 7)
+    ]
+    shadows = {str(i): 10.0 for i in range(1, 7)}
+
+    req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": dets,
+        "shadow_lengths_px": shadows,
+        "config": {"grid_rows": 2, "grid_cols": 2, "bootstrap_seed": 42, "bootstrap_n": 1000},
+    }
+    r1 = client.post("/api/hazard-grid", json=req)
+    r2 = client.post("/api/hazard-grid", json=req)
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+
+    c00_1 = r1.json()["hazard_cells"][0]
+    c00_2 = r2.json()["hazard_cells"][0]
+
+    # Reproducibility with fixed seed
+    assert c00_1["interval_low"] == c00_2["interval_low"]
+    assert c00_1["interval_high"] == c00_2["interval_high"]
+
+    # Point estimate brackets interval_low <= p_hazard <= interval_high
+    assert c00_1["interval_low"] is not None and c00_1["interval_high"] is not None
+    assert c00_1["interval_low"] <= c00_1["p_hazard"] <= c00_1["interval_high"]
+
+
+def test_bootstrap_interval_widens_when_uncertainty_grows(client):
+    from app.services.hazard import compute_bootstrap_interval
+    from app.schemas.contracts import AnalysisConfig, Detection, Measurement, MeasurementMethod
+    import numpy as np
+    import math
+
+    dets = [
+        Detection(id=i, bbox=[5.0, 5.0, 10.0, 10.0], confidence=0.9)
+        for i in range(6)
+    ]
+
+    p_hz = round(1.0 - math.exp(-(6.0 / 625.0) * 78.54), 4)
+
+    def run_interval(uncertainty_m):
+        meas = [
+            Measurement(
+                detection_id=i,
+                diameter_m=2.5,
+                height_m=0.52,  # just above 0.50 threshold
+                height_uncertainty_m=uncertainty_m,
+                method=MeasurementMethod.shadow_geometry,
+            )
+            for i in range(6)
+        ]
+        cfg = AnalysisConfig(grid_rows=2, grid_cols=2, bootstrap_seed=42, bootstrap_n=1000)
+        rng = np.random.default_rng(42)
+        low, high, _, _ = compute_bootstrap_interval(
+            cell_detections=dets,
+            cell_measurements=meas,
+            cell_area_m2=625.0,
+            footprint_area_m2=78.54,
+            corrected_hazardous=6.0,
+            p_hazard=p_hz,
+            config=cfg,
+            recall=None,
+            rng=rng,
+        )
+        return high - low
+
+    width_tight = run_interval(0.001)
+    width_wide = run_interval(0.20)
+    assert width_wide > width_tight
+
+
+def test_bootstrap_64_cells_performance(client):
+    import time
+    # 64 cells with 1000 replicates must finish in under 2 seconds
+    req = {
+        "image": {**MOCK_IMAGE, "width": 800, "height": 800},
+        "detections": [
+            {"id": i, "bbox": [(i % 8) * 100 + 10, (i // 8) * 100 + 10, (i % 8) * 100 + 20, (i // 8) * 100 + 20], "confidence": 0.9}
+            for i in range(64)
+        ],
+        "shadow_lengths_px": {str(i): 10.0 for i in range(64)},
+        "config": {"grid_rows": 8, "grid_cols": 8, "bootstrap_n": 1000, "bootstrap_seed": 42},
+    }
+    t0 = time.perf_counter()
+    r = client.post("/api/hazard-grid", json=req)
+    t1 = time.perf_counter()
+    assert r.status_code == 200
+    assert (t1 - t0) < 2.0
