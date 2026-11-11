@@ -15,10 +15,10 @@
     {
       "id": 1,
       "bbox": [
-        791,
-        189,
-        799,
-        197
+        791.0,
+        189.0,
+        799.0,
+        197.0
       ],
       "confidence": 0.62,
       "size_m": 4.0,
@@ -27,10 +27,10 @@
     {
       "id": 2,
       "bbox": [
-        878,
-        259,
-        890,
-        271
+        878.0,
+        259.0,
+        890.0,
+        271.0
       ],
       "confidence": 0.54,
       "size_m": 6.0,
@@ -39,10 +39,10 @@
     {
       "id": 3,
       "bbox": [
-        841,
-        207,
-        853,
-        219
+        841.0,
+        207.0,
+        853.0,
+        219.0
       ],
       "confidence": 0.78,
       "size_m": 6.0,
@@ -51,10 +51,10 @@
     {
       "id": 4,
       "bbox": [
-        780,
-        108,
-        790,
-        118
+        780.0,
+        108.0,
+        790.0,
+        118.0
       ],
       "confidence": 0.6,
       "size_m": 5.0,
@@ -63,10 +63,10 @@
     {
       "id": 5,
       "bbox": [
-        707,
-        141,
-        711,
-        145
+        707.0,
+        141.0,
+        711.0,
+        145.0
       ],
       "confidence": 0.86,
       "size_m": 2.0,
@@ -75,10 +75,10 @@
     {
       "id": 6,
       "bbox": [
-        757,
-        222,
-        764,
-        229
+        757.0,
+        222.0,
+        764.0,
+        229.0
       ],
       "confidence": 0.95,
       "size_m": 3.5,
@@ -87,10 +87,10 @@
     {
       "id": 7,
       "bbox": [
-        822,
-        214,
-        831,
-        223
+        822.0,
+        214.0,
+        831.0,
+        223.0
       ],
       "confidence": 0.78,
       "size_m": 4.5,
@@ -99,10 +99,10 @@
     {
       "id": 8,
       "bbox": [
-        790,
-        126,
-        800,
-        136
+        790.0,
+        126.0,
+        800.0,
+        136.0
       ],
       "confidence": 0.54,
       "size_m": 5.0,
@@ -111,10 +111,10 @@
     {
       "id": 9,
       "bbox": [
-        777,
-        281,
-        786,
-        290
+        777.0,
+        281.0,
+        786.0,
+        290.0
       ],
       "confidence": 0.77,
       "size_m": 4.5,
@@ -123,10 +123,10 @@
     {
       "id": 10,
       "bbox": [
-        841,
-        212,
-        849,
-        220
+        841.0,
+        212.0,
+        849.0,
+        220.0
       ],
       "confidence": 0.96,
       "size_m": 4.0,
@@ -135,10 +135,10 @@
     {
       "id": 11,
       "bbox": [
-        839,
-        156,
-        850,
-        167
+        839.0,
+        156.0,
+        850.0,
+        167.0
       ],
       "confidence": 0.8,
       "size_m": 5.5,
@@ -147,10 +147,10 @@
     {
       "id": 12,
       "bbox": [
-        771,
-        229,
-        779,
-        237
+        771.0,
+        229.0,
+        779.0,
+        237.0
       ],
       "confidence": 0.83,
       "size_m": 4.0,
@@ -159,10 +159,10 @@
     {
       "id": 13,
       "bbox": [
-        790,
-        178,
-        796,
-        184
+        790.0,
+        178.0,
+        796.0,
+        184.0
       ],
       "confidence": 0.75,
       "size_m": 3.0,
@@ -171,10 +171,10 @@
     {
       "id": 14,
       "bbox": [
-        753,
-        211,
-        765,
-        223
+        753.0,
+        211.0,
+        765.0,
+        223.0
       ],
       "confidence": 0.6,
       "size_m": 6.0,
@@ -183,10 +183,10 @@
     {
       "id": 15,
       "bbox": [
-        802,
-        179,
-        806,
-        183
+        802.0,
+        179.0,
+        806.0,
+        183.0
       ],
       "confidence": 0.88,
       "size_m": 2.0,
@@ -195,10 +195,10 @@
     {
       "id": 16,
       "bbox": [
-        921,
-        253,
-        930,
-        262
+        921.0,
+        253.0,
+        930.0,
+        262.0
       ],
       "confidence": 0.6,
       "size_m": 4.5,
@@ -207,10 +207,10 @@
     {
       "id": 17,
       "bbox": [
-        675,
-        200,
-        686,
-        211
+        675.0,
+        200.0,
+        686.0,
+        211.0
       ],
       "confidence": 0.57,
       "size_m": 5.5,
@@ -219,10 +219,10 @@
     {
       "id": 18,
       "bbox": [
-        797,
-        125,
-        807,
-        135
+        797.0,
+        125.0,
+        807.0,
+        135.0
       ],
       "confidence": 0.92,
       "size_m": 5.0,
@@ -231,10 +231,10 @@
     {
       "id": 19,
       "bbox": [
-        230,
-        977,
-        242,
-        989
+        230.0,
+        977.0,
+        242.0,
+        989.0
       ],
       "confidence": 0.73,
       "size_m": 6.0,
@@ -243,10 +243,10 @@
     {
       "id": 20,
       "bbox": [
-        846,
-        166,
-        852,
-        172
+        846.0,
+        166.0,
+        852.0,
+        172.0
       ],
       "confidence": 0.87,
       "size_m": 3.0,
@@ -255,10 +255,10 @@
     {
       "id": 21,
       "bbox": [
-        425,
-        80,
-        435,
-        90
+        425.0,
+        80.0,
+        435.0,
+        90.0
       ],
       "confidence": 0.78,
       "size_m": 5.0,
@@ -267,10 +267,10 @@
     {
       "id": 22,
       "bbox": [
-        261,
-        551,
-        265,
-        555
+        261.0,
+        551.0,
+        265.0,
+        555.0
       ],
       "confidence": 0.82,
       "size_m": 2.0,
@@ -279,10 +279,10 @@
     {
       "id": 23,
       "bbox": [
-        869,
-        740,
-        878,
-        749
+        869.0,
+        740.0,
+        878.0,
+        749.0
       ],
       "confidence": 0.55,
       "size_m": 4.5,
@@ -291,10 +291,10 @@
     {
       "id": 24,
       "bbox": [
-        455,
-        935,
-        463,
-        943
+        455.0,
+        935.0,
+        463.0,
+        943.0
       ],
       "confidence": 0.96,
       "size_m": 4.0,
@@ -303,10 +303,10 @@
     {
       "id": 25,
       "bbox": [
-        751,
-        507,
-        756,
-        512
+        751.0,
+        507.0,
+        756.0,
+        512.0
       ],
       "confidence": 0.91,
       "size_m": 2.5,
@@ -315,10 +315,10 @@
     {
       "id": 26,
       "bbox": [
-        633,
-        604,
-        639,
-        610
+        633.0,
+        604.0,
+        639.0,
+        610.0
       ],
       "confidence": 0.68,
       "size_m": 3.0,
@@ -327,10 +327,10 @@
     {
       "id": 27,
       "bbox": [
-        935,
-        905,
-        939,
-        909
+        935.0,
+        905.0,
+        939.0,
+        909.0
       ],
       "confidence": 0.78,
       "size_m": 2.0,
@@ -339,10 +339,10 @@
     {
       "id": 28,
       "bbox": [
-        127,
-        368,
-        135,
-        376
+        127.0,
+        368.0,
+        135.0,
+        376.0
       ],
       "confidence": 0.61,
       "size_m": 4.0,
@@ -351,10 +351,10 @@
     {
       "id": 29,
       "bbox": [
-        251,
-        564,
-        256,
-        569
+        251.0,
+        564.0,
+        256.0,
+        569.0
       ],
       "confidence": 0.54,
       "size_m": 2.5,
@@ -363,10 +363,10 @@
     {
       "id": 30,
       "bbox": [
-        86,
-        750,
-        92,
-        756
+        86.0,
+        750.0,
+        92.0,
+        756.0
       ],
       "confidence": 0.56,
       "size_m": 3.0,
@@ -375,10 +375,10 @@
     {
       "id": 31,
       "bbox": [
-        547,
-        274,
-        557,
-        284
+        547.0,
+        274.0,
+        557.0,
+        284.0
       ],
       "confidence": 0.95,
       "size_m": 5.0,
@@ -387,10 +387,10 @@
     {
       "id": 32,
       "bbox": [
-        745,
-        682,
-        753,
-        690
+        745.0,
+        682.0,
+        753.0,
+        690.0
       ],
       "confidence": 0.69,
       "size_m": 4.0,
@@ -399,10 +399,10 @@
     {
       "id": 33,
       "bbox": [
-        664,
-        378,
-        676,
-        390
+        664.0,
+        378.0,
+        676.0,
+        390.0
       ],
       "confidence": 0.71,
       "size_m": 6.0,
@@ -411,10 +411,10 @@
     {
       "id": 34,
       "bbox": [
-        81,
-        40,
-        93,
-        52
+        81.0,
+        40.0,
+        93.0,
+        52.0
       ],
       "confidence": 0.61,
       "size_m": 6.0,
@@ -423,10 +423,10 @@
     {
       "id": 35,
       "bbox": [
-        88,
-        625,
-        95,
-        632
+        88.0,
+        625.0,
+        95.0,
+        632.0
       ],
       "confidence": 0.53,
       "size_m": 3.5,
@@ -435,10 +435,10 @@
     {
       "id": 36,
       "bbox": [
-        337,
-        513,
-        345,
-        521
+        337.0,
+        513.0,
+        345.0,
+        521.0
       ],
       "confidence": 0.81,
       "size_m": 4.0,
@@ -447,10 +447,10 @@
     {
       "id": 37,
       "bbox": [
-        225,
-        147,
-        236,
-        158
+        225.0,
+        147.0,
+        236.0,
+        158.0
       ],
       "confidence": 0.61,
       "size_m": 5.5,
@@ -459,10 +459,10 @@
     {
       "id": 38,
       "bbox": [
-        410,
-        110,
-        420,
-        120
+        410.0,
+        110.0,
+        420.0,
+        120.0
       ],
       "confidence": 0.67,
       "size_m": 5.0,
@@ -471,10 +471,10 @@
     {
       "id": 39,
       "bbox": [
-        849,
-        72,
-        854,
-        77
+        849.0,
+        72.0,
+        854.0,
+        77.0
       ],
       "confidence": 0.53,
       "size_m": 2.5,
@@ -483,10 +483,10 @@
     {
       "id": 40,
       "bbox": [
-        788,
-        124,
-        795,
-        131
+        788.0,
+        124.0,
+        795.0,
+        131.0
       ],
       "confidence": 0.59,
       "size_m": 3.5,
@@ -539,9 +539,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -589,9 +590,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -639,9 +641,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -689,9 +692,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -739,9 +743,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -789,9 +794,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -839,9 +845,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -889,9 +896,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -939,9 +947,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -989,9 +998,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     }
   ],
@@ -999,355 +1009,552 @@
     {
       "row": 0,
       "col": 0,
-      "score": 0.0111,
       "p_hazard": 0.0111,
+      "score": 0.0111,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.2222,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 6.0,
-      "density": 0.014,
       "rho_h_per_m2": 0.00014222222222222224,
+      "density": 0.014,
       "cell_area_m2": 15625.0,
       "slope_deg": 4.1,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 4.1 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.22. Slope 4.1 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.22) resampling."
+      ],
+      "probability": 0.0111,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.2222,
+      "largest_height_m": 2.396,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 0,
       "col": 1,
-      "score": 0.0111,
       "p_hazard": 0.0111,
+      "score": 0.0111,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.2222,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 5.0,
-      "density": 0.014,
       "rho_h_per_m2": 0.00014222222222222224,
+      "density": 0.014,
       "cell_area_m2": 15625.0,
       "slope_deg": 4.0,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 4.0 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.22. Slope 4.0 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.22) resampling."
+      ],
+      "probability": 0.0111,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.2222,
+      "largest_height_m": 2.165,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 0,
       "col": 2,
-      "score": 0.0122,
       "p_hazard": 0.0122,
+      "score": 0.0122,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.4444,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 5.5,
-      "density": 0.016,
       "rho_h_per_m2": 0.00015644444444444446,
+      "density": 0.016,
       "cell_area_m2": 15625.0,
       "slope_deg": 2.9,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 2.9 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.44. Slope 2.9 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.44) resampling."
+      ],
+      "probability": 0.0122,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.4444,
+      "largest_height_m": 1.472,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 0,
       "col": 3,
-      "score": 0.0916,
-      "p_hazard": 0.0916,
+      "p_hazard": 0.0638,
+      "score": 0.0638,
       "class": "unsafe",
-      "boulder_count": 16,
-      "hazardous_boulder_count": 16,
+      "raw_boulder_count": 16,
+      "corrected_boulder_count": 13.1111,
+      "hazardous_boulder_count": 11.0,
       "largest_boulder_m": 6.0,
-      "density": 0.122,
-      "rho_h_per_m2": 0.0012231111111111108,
+      "rho_h_per_m2": 0.0008391111111111111,
+      "density": 0.084,
       "cell_area_m2": 15625.0,
       "slope_deg": 14.2,
       "slope_gate": "fail",
       "recall_corrected": true,
-      "explanation": "Unsafe candidate: P(hazard) = 9.2% for a 10 m footprint (16 hazardous of 16 detected boulders). Slope 14.2 deg exceeds the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "explanation": "Unsafe candidate: P(hazard) = 6.4% for a 10 m footprint. There are 11 confirmed hazardous boulders among 16 detected boulders. The recall-adjusted hazardous count is 13.11. Slope 14.2 degrees exceeds the 10 degree slope gate. Missing/uncertain inputs: height unknown for 5 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
         "slope_gate_failed"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 5 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts"
+      ],
+      "warnings": [],
+      "probability": 0.0638,
+      "interval_low": 0.0448,
+      "interval_high": 0.0793,
+      "label": "Unsafe candidate",
+      "raw_count": 16,
+      "corrected_count": 13.1111,
+      "largest_height_m": 2.887,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 1,
       "col": 0,
-      "score": 0.0056,
-      "p_hazard": 0.0056,
-      "class": "safe",
-      "boulder_count": 1,
-      "hazardous_boulder_count": 1,
+      "p_hazard": 0.0,
+      "score": 0.0,
+      "class": "caution",
+      "raw_boulder_count": 1,
+      "corrected_boulder_count": 0.0,
+      "hazardous_boulder_count": 0.0,
       "largest_boulder_m": 4.0,
-      "density": 0.007,
-      "rho_h_per_m2": 7.111111111111112e-05,
+      "rho_h_per_m2": 0.0,
+      "density": 0.0,
       "cell_area_m2": 15625.0,
       "slope_deg": 7.5,
       "slope_gate": "pass",
-      "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.6% for a 10 m footprint (1 hazardous of 1 detected boulders). Slope 7.5 deg is within the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "recall_corrected": false,
+      "explanation": "Caution: P(hazard) = 0.0% for a 10 m footprint. There are 0 confirmed hazardous boulders among 1 detected boulders. The recall-adjusted hazardous count is 0.00. Slope 7.5 degrees is within the 10 degree slope gate. Missing/uncertain inputs: height unknown for 1 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
-        "p_hazard_below_caution_threshold"
+        "p_hazard_below_caution_threshold",
+        "downgraded_height_unknown"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 1 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts",
+        "uncertainty interval unavailable: boulder heights are unmeasured fallback assumptions"
+      ],
+      "warnings": [],
+      "probability": 0.0,
+      "interval_low": null,
+      "interval_high": null,
+      "label": "Caution",
+      "raw_count": 1,
+      "corrected_count": 0.0,
+      "largest_height_m": 2.0,
+      "largest_height_method": "diameter_fallback"
     },
     {
       "row": 1,
       "col": 1,
-      "score": 0.0,
       "p_hazard": 0.0,
+      "score": 0.0,
       "class": "safe",
-      "boulder_count": 0,
-      "hazardous_boulder_count": 0,
+      "raw_boulder_count": 0,
+      "corrected_boulder_count": 0.0,
+      "hazardous_boulder_count": 0.0,
       "largest_boulder_m": null,
-      "density": 0.0,
       "rho_h_per_m2": 0.0,
+      "density": 0.0,
       "cell_area_m2": 15625.0,
       "slope_deg": 4.1,
       "slope_gate": "pass",
-      "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.0% for a 10 m footprint (0 hazardous of 0 detected boulders). Slope 4.1 deg is within the 10 deg gate.",
+      "recall_corrected": false,
+      "explanation": "Safe candidate: P(hazard) = 0.0% for a 10 m footprint. There are 0 confirmed hazardous boulders among 0 detected boulders. The recall-adjusted hazardous count is 0.00. Slope 4.1 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [],
+      "probability": 0.0,
+      "interval_low": 0.0,
+      "interval_high": 0.0,
+      "label": "Safe candidate",
+      "raw_count": 0,
+      "corrected_count": 0.0,
+      "largest_height_m": null,
+      "largest_height_method": "none"
     },
     {
       "row": 1,
       "col": 2,
-      "score": 0.0111,
       "p_hazard": 0.0111,
+      "score": 0.0111,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.2222,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 6.0,
-      "density": 0.014,
       "rho_h_per_m2": 0.00014222222222222224,
+      "density": 0.014,
       "cell_area_m2": 15625.0,
       "slope_deg": 7.0,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 7.0 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.1% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.22. Slope 7.0 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.22) resampling."
+      ],
+      "probability": 0.0111,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.2222,
+      "largest_height_m": 3.32,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 1,
       "col": 3,
-      "score": 0.0166,
-      "p_hazard": 0.0166,
-      "class": "safe",
-      "boulder_count": 3,
-      "hazardous_boulder_count": 3,
+      "p_hazard": 0.0111,
+      "score": 0.0111,
+      "class": "caution",
+      "raw_boulder_count": 3,
+      "corrected_boulder_count": 2.2222,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 6.0,
-      "density": 0.021,
-      "rho_h_per_m2": 0.00021333333333333333,
+      "rho_h_per_m2": 0.00014222222222222224,
+      "density": 0.014,
       "cell_area_m2": 15625.0,
       "slope_deg": 4.9,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.7% for a 10 m footprint (3 hazardous of 3 detected boulders). Slope 4.9 deg is within the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "explanation": "Caution: P(hazard) = 1.1% for a 10 m footprint. There are 2 confirmed hazardous boulders among 3 detected boulders. The recall-adjusted hazardous count is 2.22. Slope 4.9 degrees is within the 10 degree slope gate. Missing/uncertain inputs: height unknown for 1 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
-        "p_hazard_below_caution_threshold"
+        "p_hazard_below_caution_threshold",
+        "downgraded_height_unknown"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 1 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts"
+      ],
+      "warnings": [
+        "Low detection count (3 < 5): uncertainty interval estimated via parametric Poisson(2.22) resampling."
+      ],
+      "probability": 0.0111,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Caution",
+      "raw_count": 3,
+      "corrected_count": 2.2222,
+      "largest_height_m": 2.483,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 2,
       "col": 0,
-      "score": 0.0067,
       "p_hazard": 0.0067,
+      "score": 0.0067,
       "class": "safe",
-      "boulder_count": 1,
-      "hazardous_boulder_count": 1,
+      "raw_boulder_count": 1,
+      "corrected_boulder_count": 1.3333,
+      "hazardous_boulder_count": 1.0,
       "largest_boulder_m": 3.5,
-      "density": 0.009,
       "rho_h_per_m2": 8.533333333333332e-05,
+      "density": 0.009,
       "cell_area_m2": 15625.0,
       "slope_deg": 1.4,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.7% for a 10 m footprint (1 hazardous of 1 detected boulders). Slope 1.4 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 0.7% for a 10 m footprint. There are 1 confirmed hazardous boulders among 1 detected boulders. The recall-adjusted hazardous count is 1.33. Slope 1.4 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (1 < 5): uncertainty interval estimated via parametric Poisson(1.33) resampling."
+      ],
+      "probability": 0.0067,
+      "interval_low": 0.0,
+      "interval_high": 0.015,
+      "label": "Safe candidate",
+      "raw_count": 1,
+      "corrected_count": 1.3333,
+      "largest_height_m": 0.751,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 2,
       "col": 1,
-      "score": 0.0188,
-      "p_hazard": 0.0188,
-      "class": "safe",
-      "boulder_count": 3,
-      "hazardous_boulder_count": 3,
+      "p_hazard": 0.0133,
+      "score": 0.0133,
+      "class": "caution",
+      "raw_boulder_count": 3,
+      "corrected_boulder_count": 2.6667,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 4.0,
-      "density": 0.024,
-      "rho_h_per_m2": 0.00024177777777777777,
+      "rho_h_per_m2": 0.00017066666666666665,
+      "density": 0.017,
       "cell_area_m2": 15625.0,
       "slope_deg": 8.0,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.9% for a 10 m footprint (3 hazardous of 3 detected boulders). Slope 8.0 deg is within the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "explanation": "Caution: P(hazard) = 1.3% for a 10 m footprint. There are 2 confirmed hazardous boulders among 3 detected boulders. The recall-adjusted hazardous count is 2.67. Slope 8.0 degrees is within the 10 degree slope gate. Missing/uncertain inputs: height unknown for 1 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
-        "p_hazard_below_caution_threshold"
+        "p_hazard_below_caution_threshold",
+        "downgraded_height_unknown"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 1 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts"
+      ],
+      "warnings": [
+        "Low detection count (3 < 5): uncertainty interval estimated via parametric Poisson(2.67) resampling."
+      ],
+      "probability": 0.0133,
+      "interval_low": 0.0,
+      "interval_high": 0.0297,
+      "label": "Caution",
+      "raw_count": 3,
+      "corrected_count": 2.6667,
+      "largest_height_m": 2.0,
+      "largest_height_method": "diameter_fallback"
     },
     {
       "row": 2,
       "col": 2,
-      "score": 0.0122,
-      "p_hazard": 0.0122,
-      "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "p_hazard": 0.0067,
+      "score": 0.0067,
+      "class": "caution",
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 1.3333,
+      "hazardous_boulder_count": 1.0,
       "largest_boulder_m": 4.0,
-      "density": 0.016,
-      "rho_h_per_m2": 0.00015644444444444446,
+      "rho_h_per_m2": 8.533333333333332e-05,
+      "density": 0.009,
       "cell_area_m2": 15625.0,
       "slope_deg": 6.9,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 6.9 deg is within the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "explanation": "Caution: P(hazard) = 0.7% for a 10 m footprint. There are 1 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 1.33. Slope 6.9 degrees is within the 10 degree slope gate. Missing/uncertain inputs: height unknown for 1 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
-        "p_hazard_below_caution_threshold"
+        "p_hazard_below_caution_threshold",
+        "downgraded_height_unknown"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 1 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts"
+      ],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(1.33) resampling."
+      ],
+      "probability": 0.0067,
+      "interval_low": 0.0,
+      "interval_high": 0.015,
+      "label": "Caution",
+      "raw_count": 2,
+      "corrected_count": 1.3333,
+      "largest_height_m": 2.0,
+      "largest_height_method": "diameter_fallback"
     },
     {
       "row": 2,
       "col": 3,
-      "score": 0.0122,
       "p_hazard": 0.0122,
+      "score": 0.0122,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.4444,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 4.5,
-      "density": 0.016,
       "rho_h_per_m2": 0.00015644444444444446,
+      "density": 0.016,
       "cell_area_m2": 15625.0,
       "slope_deg": 7.8,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 7.8 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.44. Slope 7.8 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.44) resampling."
+      ],
+      "probability": 0.0122,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.4444,
+      "largest_height_m": 1.876,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 3,
       "col": 0,
-      "score": 0.0122,
       "p_hazard": 0.0122,
+      "score": 0.0122,
       "class": "safe",
-      "boulder_count": 2,
-      "hazardous_boulder_count": 2,
+      "raw_boulder_count": 2,
+      "corrected_boulder_count": 2.4444,
+      "hazardous_boulder_count": 2.0,
       "largest_boulder_m": 6.0,
-      "density": 0.016,
       "rho_h_per_m2": 0.00015644444444444446,
+      "density": 0.016,
       "cell_area_m2": 15625.0,
       "slope_deg": 7.5,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint (2 hazardous of 2 detected boulders). Slope 7.5 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 1.2% for a 10 m footprint. There are 2 confirmed hazardous boulders among 2 detected boulders. The recall-adjusted hazardous count is 2.44. Slope 7.5 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (2 < 5): uncertainty interval estimated via parametric Poisson(2.44) resampling."
+      ],
+      "probability": 0.0122,
+      "interval_low": 0.0,
+      "interval_high": 0.0248,
+      "label": "Safe candidate",
+      "raw_count": 2,
+      "corrected_count": 2.4444,
+      "largest_height_m": 3.464,
+      "largest_height_method": "shadow_geometry"
     },
     {
       "row": 3,
       "col": 1,
-      "score": 0.0056,
-      "p_hazard": 0.0056,
-      "class": "safe",
-      "boulder_count": 1,
-      "hazardous_boulder_count": 1,
+      "p_hazard": 0.0,
+      "score": 0.0,
+      "class": "caution",
+      "raw_boulder_count": 1,
+      "corrected_boulder_count": 0.0,
+      "hazardous_boulder_count": 0.0,
       "largest_boulder_m": 4.0,
-      "density": 0.007,
-      "rho_h_per_m2": 7.111111111111112e-05,
+      "rho_h_per_m2": 0.0,
+      "density": 0.0,
       "cell_area_m2": 15625.0,
       "slope_deg": 6.9,
       "slope_gate": "pass",
-      "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.6% for a 10 m footprint (1 hazardous of 1 detected boulders). Slope 6.9 deg is within the 10 deg gate. Missing/uncertain: some heights are low-confidence diameter-based assumptions.",
+      "recall_corrected": false,
+      "explanation": "Caution: P(hazard) = 0.0% for a 10 m footprint. There are 0 confirmed hazardous boulders among 1 detected boulders. The recall-adjusted hazardous count is 0.00. Slope 6.9 degrees is within the 10 degree slope gate. Missing/uncertain inputs: height unknown for 1 boulder(s); some heights are provisional diameter-based assumptions and were excluded from hazard counts.",
       "reasons": [
-        "p_hazard_below_caution_threshold"
+        "p_hazard_below_caution_threshold",
+        "downgraded_height_unknown"
       ],
       "missing_inputs": [
-        "some heights are low-confidence diameter-based assumptions"
-      ]
+        "height unknown for 1 boulder(s)",
+        "some heights are provisional diameter-based assumptions and were excluded from hazard counts",
+        "uncertainty interval unavailable: boulder heights are unmeasured fallback assumptions"
+      ],
+      "warnings": [],
+      "probability": 0.0,
+      "interval_low": null,
+      "interval_high": null,
+      "label": "Caution",
+      "raw_count": 1,
+      "corrected_count": 0.0,
+      "largest_height_m": 2.0,
+      "largest_height_method": "diameter_fallback"
     },
     {
       "row": 3,
       "col": 2,
-      "score": 0.0,
       "p_hazard": 0.0,
+      "score": 0.0,
       "class": "safe",
-      "boulder_count": 0,
-      "hazardous_boulder_count": 0,
+      "raw_boulder_count": 0,
+      "corrected_boulder_count": 0.0,
+      "hazardous_boulder_count": 0.0,
       "largest_boulder_m": null,
-      "density": 0.0,
       "rho_h_per_m2": 0.0,
+      "density": 0.0,
       "cell_area_m2": 15625.0,
       "slope_deg": 2.2,
       "slope_gate": "pass",
-      "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.0% for a 10 m footprint (0 hazardous of 0 detected boulders). Slope 2.2 deg is within the 10 deg gate.",
+      "recall_corrected": false,
+      "explanation": "Safe candidate: P(hazard) = 0.0% for a 10 m footprint. There are 0 confirmed hazardous boulders among 0 detected boulders. The recall-adjusted hazardous count is 0.00. Slope 2.2 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [],
+      "probability": 0.0,
+      "interval_low": 0.0,
+      "interval_high": 0.0,
+      "label": "Safe candidate",
+      "raw_count": 0,
+      "corrected_count": 0.0,
+      "largest_height_m": null,
+      "largest_height_method": "none"
     },
     {
       "row": 3,
       "col": 3,
-      "score": 0.0067,
       "p_hazard": 0.0067,
+      "score": 0.0067,
       "class": "safe",
-      "boulder_count": 1,
-      "hazardous_boulder_count": 1,
+      "raw_boulder_count": 1,
+      "corrected_boulder_count": 1.3333,
+      "hazardous_boulder_count": 1.0,
       "largest_boulder_m": 2.0,
-      "density": 0.009,
       "rho_h_per_m2": 8.533333333333332e-05,
+      "density": 0.009,
       "cell_area_m2": 15625.0,
       "slope_deg": 4.4,
       "slope_gate": "pass",
       "recall_corrected": true,
-      "explanation": "Safe candidate: P(hazard) = 0.7% for a 10 m footprint (1 hazardous of 1 detected boulders). Slope 4.4 deg is within the 10 deg gate.",
+      "explanation": "Safe candidate: P(hazard) = 0.7% for a 10 m footprint. There are 1 confirmed hazardous boulders among 1 detected boulders. The recall-adjusted hazardous count is 1.33. Slope 4.4 degrees is within the 10 degree slope gate.",
       "reasons": [
         "p_hazard_below_caution_threshold"
       ],
-      "missing_inputs": []
+      "missing_inputs": [],
+      "warnings": [
+        "Low detection count (1 < 5): uncertainty interval estimated via parametric Poisson(1.33) resampling."
+      ],
+      "probability": 0.0067,
+      "interval_low": 0.0,
+      "interval_high": 0.015,
+      "label": "Safe candidate",
+      "raw_count": 1,
+      "corrected_count": 1.3333,
+      "largest_height_m": 0.895,
+      "largest_height_method": "shadow_geometry"
     }
   ],
   "warnings": [
-    "Uncertainty excludes error in the sun elevation angle itself.",
-    "Some hazard heights rely on the diameter-based fallback assumption (low confidence)."
+    "Reported uncertainty excludes uncertainty in Sun elevation and pixel scale.",
+    "Grid cell area (15625.0 m2) is more than 10x the lander footprint area (78.5 m2). Large cells dilute boulder density and may underestimate localized hazard probability; consider using a finer grid.",
+    "Parametric Poisson resampling was used for uncertainty intervals in 11 cell(s) with < 5 detections.",
+    "Some heights use the diameter-based fallback assumption. These provisional values were excluded from confirmed hazardous-boulder counts and must not be interpreted as physical height measurements."
   ],
   "is_mock": true
 }

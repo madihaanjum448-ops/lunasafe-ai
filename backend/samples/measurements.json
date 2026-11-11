@@ -58,9 +58,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -108,9 +109,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -158,9 +160,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -208,9 +211,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -258,9 +262,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -308,9 +313,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -358,9 +364,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -408,9 +415,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -458,9 +466,10 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     },
     {
@@ -508,13 +517,14 @@
       "shadow_length_px": null,
       "method": "diameter_fallback",
       "confidence": "low",
-      "is_hazardous": true,
+      "is_hazardous": null,
       "warnings": [
-        "Height is an ASSUMPTION (diameter x 0.5) because shadow length not available."
+        "Height is an ASSUMPTION using diameter x 0.5. Missing: valid shadow length.",
+        "This fallback height is not a confirmed physical measurement and must not independently determine hazardous-boulder classification."
       ]
     }
   ],
   "warnings": [
-    "Uncertainty excludes error in the sun elevation angle itself."
+    "Reported uncertainty excludes uncertainty in Sun elevation and pixel scale."
   ]
 }
