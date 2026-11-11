@@ -10,7 +10,7 @@ Detailed scientific data structures are defined in contracts.py.
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.contracts import (
     AnalysisConfig,
@@ -176,4 +176,49 @@ class AnalyzeResponse(BaseModel):
     is_mock: bool = Field(
         default=False,
         description="Indicates whether the result uses mock data.",
+    )
+
+
+# ---------------------------------------------------------
+# 5. Complete end-to-end pipeline response
+# ---------------------------------------------------------
+
+class PipelineResponse(BaseModel):
+    """
+    Complete response returned by the POST /api/pipeline end-to-end endpoint.
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    image: ImageInfo
+
+    detections: List[Detection] = Field(
+        description="Detected boulders with size_m populated where available.",
+    )
+
+    measurements: List[Measurement] = Field(
+        description="Diameter and height measurements with uncertainties and methods.",
+    )
+
+    hazard_cells: List[HazardCell] = Field(
+        description=(
+            "Grid-cell hazard probabilities, classifications, "
+            "slope information and explanations."
+        ),
+        serialization_alias="hazard_cells",
+    )
+
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Aggregated pipeline warnings and limitations.",
+    )
+
+    disclaimer: str = (
+        "LunaSafe AI is a research prototype for lunar landing "
+        "hazard screening. Results are not flight-certified and "
+        "do not guarantee a safe landing."
+    )
+
+    is_mock: bool = Field(
+        default=False,
+        description="Indicates whether synthetic or mock data was used.",
     )
