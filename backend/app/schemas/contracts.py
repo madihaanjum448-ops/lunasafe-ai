@@ -232,6 +232,11 @@ class HazardCell(BaseModel):
         default=None, ge=0
     )
 
+    largest_height_method: Optional[str] = Field(
+        default=None,
+        description="Measurement method for the largest detected height (shadow_geometry, diameter_fallback, or none).",
+    )
+
 
 class HazardGridFile(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -305,6 +310,13 @@ class AnalysisConfig(BaseModel):
     )
 
     apply_recall_correction: bool = False
+
+    recall_floor: float = Field(
+        default=0.2,
+        gt=0,
+        le=1.0,
+        description="Minimum recall floor to avoid extreme weights (1/recall). Bins with 0 < recall < recall_floor are clamped to this floor.",
+    )
 
     shadow_height_min_sun_elevation_deg: float = Field(
         default=5.0, gt=0, le=90

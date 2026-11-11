@@ -686,3 +686,80 @@ def test_nan_inf_inputs_raise_or_handled(client):
     cell_10 = [c for c in grid_nan.cells if c.row == 1 and c.col == 0][0]
     assert cell_10.slope_gate == "not_assessed"
     assert any("Invalid slope value" in w for w in grid_nan.warnings)
+
+
+def test_recall_correction_cap_and_largest_height_method(client):
+    from app.services.hazard import _corrected_count
+    from app.schemas.contracts import RecallBin, RecallFile
+
+    # 1. Recall 0.5 doubles the count (weight 2.0)
+    rf = RecallFile(
+        bins=[
+            RecallBin(bin_min_m=0.0, bin_max_m=2.0, recall=0.5),
+            RecallBin(bin_min_m=2.0, bin_max_m=4.0, recall=0.05),  # very low recall
+        ]
+    )
+    w, corr, capped = _corrected_count(1.0, rf, recall_floor=0.2)
+    assert corr is True
+    assert capped is False
+    assert abs(w - 2.0) < 1e-9
+
+    # 2. Cap applies when recall < recall_floor (0.05 < 0.2 -> weight capped at 1/0.2 = 5.0)
+    w_cap, corr_cap, capped_cap = _corrected_count(3.0, rf, recall_floor=0.2)
+    assert corr_cap is True
+    assert capped_cap is True
+    assert abs(w_cap - 5.0) < 1e-9
+
+    # 3. Missing recall leaves boulder uncorrected (weight 1.0)
+    w_none, corr_none, capped_none = _corrected_count(5.0, rf, recall_floor=0.2)
+    assert corr_none is False
+    assert capped_none is False
+    assert w_none == 1.0
+
+    # 4. API endpoint test: cap warning and corrected P >= uncorrected P
+    base_req = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [10, 10, 16, 16], "confidence": 0.95},  # 6px * 0.5 = 3m diameter -> low recall bin
+        ],
+        "shadow_lengths_px": {"1": 10.0},
+        "slope_by_cell": [[2.0, 2.0], [2.0, 2.0]],
+        "config": {"grid_rows": 2, "grid_cols": 2, "apply_recall_correction": False, "recall_floor": 0.2},
+    }
+    r_uncorr = client.post("/api/hazard-grid", json=base_req)
+    assert r_uncorr.status_code == 200
+    p_uncorr = r_uncorr.json()["hazard_cells"][0]["p_hazard"]
+    c00_uncorr = r_uncorr.json()["hazard_cells"][0]
+    assert c00_uncorr["largest_height_method"] == "shadow_geometry"
+    assert c00_uncorr["largest_height_m"] is not None
+
+    req_corr = {
+        **base_req,
+        "config": {"grid_rows": 2, "grid_cols": 2, "apply_recall_correction": True, "recall_floor": 0.2},
+        "recall": {
+            "bins": [
+                {"min_diameter_m": 0.0, "max_diameter_m": 2.0, "recall": 0.5},
+                {"min_diameter_m": 2.0, "max_diameter_m": 4.0, "recall": 0.05},
+            ]
+        },
+    }
+    r_corr = client.post("/api/hazard-grid", json=req_corr)
+    assert r_corr.status_code == 200
+    body_corr = r_corr.json()
+    c00_corr = body_corr["hazard_cells"][0]
+    p_corr = c00_corr["p_hazard"]
+    assert p_corr >= p_uncorr
+    assert c00_corr["corrected_boulder_count"] == 5.0
+    assert any("Recall floor (0.2) applied" in w for w in body_corr["warnings"])
+
+    # 5. largest_height_method is diameter_fallback when no shadow
+    req_fallback = {
+        "image": {**MOCK_IMAGE, "width": 100, "height": 100},
+        "detections": [
+            {"id": 1, "bbox": [10, 10, 16, 16], "confidence": 0.95},
+        ],
+        "config": {"grid_rows": 2, "grid_cols": 2},
+    }
+    r_fb = client.post("/api/hazard-grid", json=req_fallback)
+    assert r_fb.status_code == 200
+    assert r_fb.json()["hazard_cells"][0]["largest_height_method"] == "diameter_fallback"

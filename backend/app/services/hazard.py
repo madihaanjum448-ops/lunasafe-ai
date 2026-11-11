@@ -146,19 +146,30 @@ def _recall_for(
 def _corrected_count(
     diameter_m: Optional[float],
     recall: Optional[RecallFile],
-) -> Tuple[float, bool]:
+    recall_floor: float = 0.2,
+) -> Tuple[float, bool, bool]:
     """
     Return the recall-adjusted contribution of one hazardous boulder.
 
-    If no valid recall bin exists, retain the raw contribution of 1.
+    Returns:
+        (weight, was_corrected, was_capped)
+
+    If no valid recall bin exists or recall is 0, retain raw contribution of 1.0 (uncorrected).
+    If 0 < recall < recall_floor, clamp recall to recall_floor to prevent weight explosion.
     """
 
     recall_value = _recall_for(diameter_m, recall)
 
-    if recall_value is None:
-        return 1.0, False
+    if recall_value is None or recall_value <= 0:
+        return 1.0, False, False
 
-    return 1.0 / recall_value, True
+    was_capped = False
+    effective_recall = recall_value
+    if effective_recall < recall_floor:
+        effective_recall = recall_floor
+        was_capped = True
+
+    return 1.0 / effective_recall, True, was_capped
 
 
 # ================================================================
@@ -365,6 +376,7 @@ def build_hazard_grid(
     cells: List[HazardCell] = []
 
     uncorrected_bins = 0
+    capped_bins = 0
     any_fallback = False
 
     for row in range(rows):
@@ -395,21 +407,27 @@ def build_hazard_grid(
                 else None
             )
 
-            # Only genuine shadow-geometry heights are eligible.
-            measured_heights = [
-                measurement.height_m
-                for measurement in cell_measurements
-                if measurement is not None
-                and measurement.method
-                == MeasurementMethod.shadow_geometry
-                and measurement.height_m is not None
+            # Determine largest height and measurement method
+            measurements_with_height = [
+                m
+                for m in cell_measurements
+                if m is not None and m.height_m is not None
             ]
 
-            largest_height = (
-                max(measured_heights)
-                if measured_heights
-                else None
-            )
+            if measurements_with_height:
+                m_largest = max(
+                    measurements_with_height, key=lambda m: m.height_m
+                )
+                largest_height = m_largest.height_m
+                if m_largest.method == MeasurementMethod.shadow_geometry:
+                    largest_height_method = "shadow_geometry"
+                elif m_largest.method == MeasurementMethod.diameter_fallback:
+                    largest_height_method = "diameter_fallback"
+                else:
+                    largest_height_method = "none"
+            else:
+                largest_height = None
+                largest_height_method = "none"
 
             # ----------------------------------------------------
             # 4B. Count confirmed hazardous boulders
@@ -467,11 +485,12 @@ def build_hazard_grid(
 
                 raw_hazardous += 1
 
-                if config.apply_recall_correction:
+                if config.apply_recall_correction and recall is not None:
 
-                    contribution, was_corrected = _corrected_count(
+                    contribution, was_corrected, was_capped = _corrected_count(
                         measurement.diameter_m,
                         recall,
+                        recall_floor=config.recall_floor,
                     )
 
                     corrected_hazardous += contribution
@@ -480,6 +499,9 @@ def build_hazard_grid(
                         cell_recall_corrected = True
                     else:
                         uncorrected_bins += 1
+
+                    if was_capped:
+                        capped_bins += 1
 
                 else:
                     corrected_hazardous += 1.0
@@ -685,6 +707,7 @@ def build_hazard_grid(
                     raw_count=len(cell_detections),
                     corrected_count=corrected_value,
                     largest_height_m=largest_height,
+                    largest_height_method=largest_height_method,
                 )
             )
 
@@ -696,6 +719,12 @@ def build_hazard_grid(
         warnings.append(
             "Recall correction requested but no recall.json "
             "was supplied; counts are uncorrected."
+        )
+
+    if capped_bins > 0:
+        warnings.append(
+            f"Recall floor ({config.recall_floor}) applied to {capped_bins} boulder(s) "
+            f"to prevent weight explosion (weight capped at {1.0 / config.recall_floor:.1f})."
         )
 
     if uncorrected_bins > 0:
