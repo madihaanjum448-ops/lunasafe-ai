@@ -1,0 +1,21 @@
+# Datasets
+data/raw/
+data/processed/
+data/**/*.zip
+
+# Model checkpoints and weights
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Training outputs
+outputs/checkpoints/
+outputs/tensorboard/
+outputs/wandb/
