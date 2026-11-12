@@ -9,7 +9,7 @@ import ThresholdControls from '../components/ThresholdControls';
 import { useMission } from '../context/useMission';
 
 export default function HazardMapPage() {
-  const { showHeatmap, showDetectionsInHazardMap, selectedCell, loadSampleData, hasResult, isMock, loading, apiError } = useMission();
+  const { showHeatmap, showDetectionsInHazardMap, selectedCell, loadSampleData, hasResult, isMock, loading, apiError, resultLabel } = useMission();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -21,7 +21,7 @@ export default function HazardMapPage() {
               Candidate Hazard Analytics
             </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold tracking-wide">
-              {hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload'}
+              {resultLabel || (hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload')}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">

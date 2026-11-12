@@ -37,7 +37,9 @@ export default function UploadPage() {
     applyManualMetadata,
     runAnalysis,
     loadOfflineDemo,
+    loadCaseStudy,
     loadResultFile,
+    resultLabel,
   } = useMission();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -333,6 +335,13 @@ export default function UploadPage() {
               </button>
               <button
                 type="button"
+                onClick={loadCaseStudy}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium"
+              >
+                Load known-site case study
+              </button>
+              <button
+                type="button"
                 onClick={() => resultInputRef.current?.click()}
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium"
               >
@@ -341,7 +350,7 @@ export default function UploadPage() {
               <input ref={resultInputRef} type="file" accept=".json,application/json" onChange={onResultFile} className="hidden" />
             </div>
             <p className="text-[11px] text-slate-400 leading-snug">
-              The offline demo is pre-computed mock data. For the case study, upload the site image first, then load its saved /api/analyze response.
+              The offline demo is pre-computed mock data. The known-site case study loads a saved result directly on its image without contacting the backend.
             </p>
           </div>
 
@@ -505,7 +514,7 @@ export default function UploadPage() {
                       {detections.length} obstacles
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          (Demo data)
+                          ({resultLabel || 'Demo data'})
                         </span>
                       )}
                     </>
@@ -522,7 +531,7 @@ export default function UploadPage() {
                       {hazardCells.length} cells
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          (Demo data)
+                          ({resultLabel || 'Demo data'})
                         </span>
                       )}
                     </>

@@ -69,6 +69,7 @@ export function MissionProvider({ children }) {
   const [pendingDetections, setPendingDetections] = useState(null);
   const [thresholds, setThresholds] = useState({});
   const [resultSource, setResultSource] = useState('sample'); // 'sample' | 'backend' | 'precomputed'
+  const [resultLabel, setResultLabel] = useState(null);
   const uploadedFileRef = useRef(null);
   const uploadSeq = useRef(0);
 
@@ -200,8 +201,85 @@ export function MissionProvider({ children }) {
   const loadOfflineDemo = () => {
     uploadSeq.current += 1; // ignore any request still in flight
     setLoading(false);
+    setResultLabel(null);
     applyPrecomputed(sampleAnalyzeResponse, { useSampleImage: true });
     setUploadSuccess('Offline demo loaded (pre-computed, is_mock: true). No backend needed.');
+  };
+
+  /**
+   * Known-site case study: loads /case-study/site.jpg and /case-study/result.json
+   * without calling the backend.
+   */
+  const loadCaseStudy = async () => {
+    uploadSeq.current += 1;
+    setLoading(true);
+    setLoadingLabel('Loading known-site case study…');
+    setUploadError(null);
+    setApiError(null);
+    setUploadNote(null);
+    setUploadSuccess(null);
+
+    try {
+      const jsonRes = await fetch('/case-study/result.json');
+      if (!jsonRes.ok) {
+        throw new Error('Case study files not found in public/case-study/.');
+      }
+      const contentType = jsonRes.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        throw new Error('Case study files not found in public/case-study/.');
+      }
+      let raw;
+      try {
+        raw = await jsonRes.json();
+      } catch {
+        throw new Error('Case study files not found in public/case-study/.');
+      }
+
+      const realDims = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('Case study files not found in public/case-study/.'));
+        img.src = '/case-study/site.jpg';
+      });
+
+      if (!realDims.width || !realDims.height) {
+        throw new Error('Case study files not found in public/case-study/.');
+      }
+
+      setImageMeta({
+        id: 'case_study',
+        src: '/case-study/site.jpg',
+        width: realDims.width,
+        height: realDims.height,
+        pixelScaleM: raw.image?.pixel_scale_m ?? null,
+        sunElevationDeg: raw.image?.sun_elevation_deg ?? null,
+        projection: raw.image?.projection ?? null,
+        fileName: 'Known-site case study',
+        fileSize: '—',
+        isSample: false,
+      });
+
+      const rawWithRealDims = {
+        ...raw,
+        hazard_cells: raw.hazard_cells || raw.cells,
+        image: {
+          ...(raw.image || {}),
+          width: realDims.width,
+          height: realDims.height,
+        },
+      };
+
+      applyPrecomputed(rawWithRealDims, { useSampleImage: false });
+      setResultLabel('Pre-computed case study');
+      setPendingDetections(null);
+      uploadedFileRef.current = null;
+      setUploadSuccess('Pre-computed case study loaded (no backend call).');
+    } catch {
+      setUploadError('Case study files not found in public/case-study/.');
+      setApiError('Case study files not found in public/case-study/.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   /** Load a saved /api/analyze response (for example the known-site case study) onto the current image. */
@@ -308,6 +386,7 @@ export function MissionProvider({ children }) {
     setHasResult(true);
     setIsMock(true);
     setResultSource('sample');
+    setResultLabel(null);
     setBackendImage(null);
     setMissingMetadata([]);
     setBackendWarnings([]);
@@ -414,6 +493,7 @@ export function MissionProvider({ children }) {
       setHasResult(false);
       setIsMock(false);
       setResultSource('backend');
+      setResultLabel(null);
       setBackendImage(null);
       setMissingMetadata([]);
       setBackendWarnings([]);
@@ -479,7 +559,9 @@ export function MissionProvider({ children }) {
         setThreshold,
         resetThresholds,
         resultSource,
+        resultLabel,
         loadOfflineDemo,
+        loadCaseStudy,
         loadResultFile,
       }}
     >

@@ -331,12 +331,9 @@ export default function RegionExplanationPanel() {
               <li>Footprint diameter: {analysisConfig.lander_footprint_diameter_m} m</li>
               <li>Hazardous boulder height: {analysisConfig.hazard_height_threshold_m} m</li>
               <li>Slope gate: {analysisConfig.slope_gate_deg}°</li>
-              <li>
-                Caution at P ≥ {analysisConfig.caution_p_hazard}, Unsafe at P ≥ {analysisConfig.unsafe_p_hazard}
-              </li>
             </ul>
           ) : (
-            <span className="font-mono text-[11px] text-amber-400 italic">Unavailable (backend config not loaded)</span>
+            <span className="font-mono text-[11px] text-amber-400 italic">Unavailable</span>
           )}
         </div>
       </div>
