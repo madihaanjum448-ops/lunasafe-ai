@@ -6,3 +6,4 @@ uploads/
 .pytest_cache/
 pytest_results.txt
 
+venv/
