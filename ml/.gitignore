@@ -26,3 +26,17 @@ data/sample/
 # Model checkpoints
 models/*.pt
 models/*.pth
+
+# LROC validation data and generated products
+data/lroc_validation/
+results/
+
+# ISIS generated files
+*.cub
+*.prt
+
+# Ultralytics inference outputs
+runs/
+
+# Root-level generated inference outputs
+/runs/
