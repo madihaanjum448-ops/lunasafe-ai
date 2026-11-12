@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MissionProvider } from './context/MissionContext';
 import Navbar from './components/Navbar';
+import ResultBadge from './components/ResultBadge';
 import UploadPage from './pages/UploadPage';
 import DetectionsPage from './pages/DetectionsPage';
 import HazardMapPage from './pages/HazardMapPage';
@@ -45,12 +46,7 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-4 text-slate-400">
-                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-amber-400/90">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                  Operating in Mock Data Simulation Mode
-                </span>
-                <span>•</span>
-                <span>Simulated Telemetry Format</span>
+                <ResultBadge />
               </div>
             </div>
           </footer>

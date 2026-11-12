@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     app_name: str = "LunaSafe AI Backend"
     app_version: str = "0.1.0"
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5182,http://127.0.0.1:5182"
 
     max_file_size_mb: int = 50
     max_image_width: int = 8192

@@ -9,6 +9,8 @@ import {
 } from '../constants/upload';
 import { getMetadataWarnings } from '../constants/metadata';
 import { MetadataSummaryCard, MetadataWarningsCard } from '../components/MetadataCards';
+import ResultBadge from '../components/ResultBadge';
+import ThresholdControls from '../components/ThresholdControls';
 
 export default function UploadPage() {
   const {
@@ -22,14 +24,54 @@ export default function UploadPage() {
     loadSampleData,
     detections,
     hazardCells,
+    loading,
+    loadingLabel,
+    apiError,
+    setApiError,
+    hasResult,
+    isMock,
+    missingMetadata,
+    backendWarnings,
+    pendingDetections,
+    loadDetectionsFile,
+    applyManualMetadata,
+    runAnalysis,
+    loadOfflineDemo,
+    loadResultFile,
   } = useMission();
 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const detectionsInputRef = useRef(null);
+  const resultInputRef = useRef(null);
+  const [manualScale, setManualScale] = useState('');
+  const [manualSun, setManualSun] = useState('');
   const navigate = useNavigate();
 
   // Derived metadata warnings – computed from imageMeta on each render
   const metaWarnings = getMetadataWarnings(imageMeta);
+
+  const onDetectionsFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) loadDetectionsFile(f);
+    if (e.target) e.target.value = '';
+  };
+
+  const onResultFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) loadResultFile(f);
+    if (e.target) e.target.value = '';
+  };
+
+  const onApplyMetadata = () => {
+    const scale = manualScale === '' ? null : Number(manualScale);
+    const sun = manualSun === '' ? null : Number(manualSun);
+    if ((scale !== null && !(scale > 0)) || (sun !== null && !(sun >= 0 && sun <= 90))) {
+      setApiError('Pixel scale must be above 0 and sun elevation between 0 and 90 degrees.');
+      return;
+    }
+    applyManualMetadata({ pixelScaleM: scale, sunElevationDeg: sun });
+  };
 
   // Handle standard file selection
   const onFileChange = (e) => {
@@ -70,9 +112,7 @@ export default function UploadPage() {
           <span className="text-xs uppercase tracking-widest text-cyan-400 font-mono font-semibold">
             Lunar Reconnaissance & Safety Pipeline
           </span>
-          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-            Mock Data Mode
-          </span>
+          <ResultBadge className="text-xs" />
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
           Orbital Satellite Image Ingestion
@@ -81,6 +121,27 @@ export default function UploadPage() {
           Upload lunar surface imagery to perform automated boulder detection and hazard grid evaluation for safe autonomous touchdown.
         </p>
       </div>
+
+      {/* Loading state */}
+      {loading && (
+        <div className="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/40 text-cyan-200 text-xs flex items-center gap-3" role="status">
+          <span className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin flex-shrink-0" />
+          <span>{loadingLabel || 'Working…'}</span>
+        </div>
+      )}
+
+      {/* Backend / API error */}
+      {apiError && (
+        <div className="p-4 rounded-xl bg-red-950/60 border border-red-500/60 text-red-200 text-sm flex items-start gap-3" role="alert">
+          <div className="flex-1">
+            <h4 className="font-semibold text-red-100">Backend Error</h4>
+            <p className="mt-0.5 text-xs text-red-300 leading-relaxed">{apiError}</p>
+          </div>
+          <button onClick={() => setApiError(null)} className="text-red-400 hover:text-white p-1" aria-label="Dismiss backend error">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Multiple Files Info Note */}
       {uploadNote && (
@@ -182,6 +243,108 @@ export default function UploadPage() {
             </div>
           </div>
 
+          {/* Backend analysis controls */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+            <h4 className="text-sm font-semibold text-slate-200">Run analysis</h4>
+            {!imageMeta.isSample && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end text-xs">
+                <label className="space-y-1">
+                  <span className="text-slate-400">Pixel scale (m/px)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={manualScale}
+                    onChange={(e) => setManualScale(e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 font-mono"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-slate-400">Sun elevation (°)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="90"
+                    step="any"
+                    value={manualSun}
+                    onChange={(e) => setManualSun(e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 font-mono"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={onApplyMetadata}
+                  disabled={loading}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-medium disabled:opacity-40"
+                >
+                  Apply metadata
+                </button>
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={runAnalysis}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {loading && <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
+                {pendingDetections ? 'Run analysis on loaded detections' : 'Run analysis (demo detections)'}
+              </button>
+              <button
+                type="button"
+                onClick={() => detectionsInputRef.current?.click()}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium disabled:opacity-40"
+              >
+                Load detections JSON
+              </button>
+              <input ref={detectionsInputRef} type="file" accept=".json,application/json" onChange={onDetectionsFile} className="hidden" />
+            </div>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              {pendingDetections
+                ? `Using ${pendingDetections.detections.length} detections from ${pendingDetections.name} (is_mock: ${pendingDetections.isMock}).`
+                : 'No detections loaded: the demo run uses built-in sample detections and is labelled is_mock: true. The backend does not run the detector on images yet, so real results need a detections JSON from the AI module.'}
+            </p>
+            {missingMetadata.length > 0 && (
+              <p className="text-[11px] text-amber-300 font-mono">Missing metadata: {missingMetadata.join(', ')}</p>
+            )}
+            {backendWarnings.length > 0 && (
+              <ul className="text-[11px] text-amber-300/90 space-y-0.5">
+                {backendWarnings.map((w) => (
+                  <li key={w}>• {w}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <ThresholdControls />
+
+          {/* Saved results: offline fallback and known-site case study */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+            <h4 className="text-sm font-semibold text-slate-200">Saved results (no backend needed)</h4>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={loadOfflineDemo}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium"
+              >
+                Load offline demo (pre-computed)
+              </button>
+              <button
+                type="button"
+                onClick={() => resultInputRef.current?.click()}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium"
+              >
+                Load saved result JSON (case study)
+              </button>
+              <input ref={resultInputRef} type="file" accept=".json,application/json" onChange={onResultFile} className="hidden" />
+            </div>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              The offline demo is pre-computed mock data. For the case study, upload the site image first, then load its saved /api/analyze response.
+            </p>
+          </div>
+
           {/* Quick preset button: Load Sample Illustration */}
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -272,7 +435,7 @@ export default function UploadPage() {
                   ? (imageMeta.isSample
                     ? 'Mock scale used for demonstration only.'
                     : `Spatial resolution calibrated: each pixel corresponds to ${imageMeta.pixelScaleM} meters on the lunar surface.`)
-                  : 'Pixel scale is Unavailable until the backend provides it.'}
+                  : 'Pixel scale unavailable: not found in the file. Enter it above or supply it with the image.'}
               </p>
             </div>
 
@@ -337,30 +500,34 @@ export default function UploadPage() {
               <div className="flex items-center justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Precomputed Boulders:</span>
                 <span className="font-mono text-cyan-300 font-bold">
-                  {imageMeta.isSample ? (
+                  {hasResult ? (
                     <>
                       {detections.length} obstacles
-                      <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                        (Mock value)
-                      </span>
+                      {isMock && (
+                        <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
+                          (Demo data)
+                        </span>
+                      )}
                     </>
                   ) : (
-                    <span className="text-slate-400 font-normal">None (Not processed yet)</span>
+                    <span className="text-slate-400 font-normal">Not processed yet</span>
                   )}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className="text-slate-400">Hazard Grid Partition:</span>
                 <span className="font-mono text-slate-200">
-                  {imageMeta.isSample ? (
+                  {hasResult ? (
                     <>
-                      8×8 ({hazardCells.length} cells)
-                      <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                        (Mock value)
-                      </span>
+                      {hazardCells.length} cells
+                      {isMock && (
+                        <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
+                          (Demo data)
+                        </span>
+                      )}
                     </>
                   ) : (
-                    <span className="text-slate-400 font-normal">None (Not processed yet)</span>
+                    <span className="text-slate-400 font-normal">Not processed yet</span>
                   )}
                 </span>
               </div>

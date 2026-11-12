@@ -83,7 +83,8 @@ export default function DetectionOverlay({
 
         // Label content and dimensions
         const confPct  = `${(d.confidence * 100).toFixed(0)}%`;
-        const sizeText = d.size_m !== null ? `${d.size_m}m` : null;
+        const dia      = d.diameterM ?? d.diameter_m;
+        const sizeText = dia !== null && dia !== undefined ? `${dia}m` : null;
         const labelTxt = sizeText ? `${confPct} • ${sizeText}` : confPct;
         const badgeW   = Math.max(35, Math.round((labelTxt.length * 13 + 22) * scale));
 
@@ -121,6 +122,17 @@ export default function DetectionOverlay({
                   rx={rx}
                   filter={glowRef}
                 />
+
+                {/* Segmentation outline (from the AI module), in original-image pixels */}
+                {Array.isArray(d.polygon) && d.polygon.length >= 3 && (
+                  <polygon
+                    points={d.polygon.map((pt) => `${pt[0]},${pt[1]}`).join(' ')}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={Math.max(1, strokeWidth * 0.6)}
+                    strokeLinejoin="round"
+                  />
+                )}
 
                 {/* Corner crosshairs (4 corners × 2 lines each) */}
                 {[

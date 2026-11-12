@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import sampleResult from '../mock/sampleResult.json';
 import sampleImageSrc from '../assets/lunar_sample.jpg';
 import { MissionContext } from './MissionContextInstance';
@@ -10,6 +10,12 @@ import {
   MULTIPLE_FILES_NOTE,
   isValidFileType,
 } from '../constants/upload';
+import { normalizeResult } from '../constants/schema';
+import sampleAnalyzeRequest from '../mock/sampleAnalyzeRequest.json';
+import sampleAnalyzeResponse from '../mock/sampleAnalyzeResponse.json';
+import { analyze, getConfig, uploadImage } from '../api/client';
+
+const initialNormalizedSample = normalizeResult(sampleResult);
 
 export function MissionProvider({ children }) {
   // Currently loaded image state
@@ -26,10 +32,10 @@ export function MissionProvider({ children }) {
     isSample: true,
   });
 
-  // Detection and hazard data from mock source
-  const [detections, setDetections] = useState(sampleResult.detections);
-  const [hazardCells, setHazardCells] = useState(sampleResult.hazard_cells);
-  const [warnings, setWarnings] = useState(sampleResult.warnings);
+  // Detection and hazard data from normalized source
+  const [detections, setDetections] = useState(initialNormalizedSample.detections);
+  const [hazardCells, setHazardCells] = useState(initialNormalizedSample.hazardCells);
+  const [warnings, setWarnings] = useState(initialNormalizedSample.warnings);
 
   // Confidence threshold filter for boulder detections (0.00 - 1.00)
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.60);
@@ -50,10 +56,236 @@ export function MissionProvider({ children }) {
   const [uploadSuccess, setUploadSuccess] = useState(null);
   const [uploadNote, setUploadNote] = useState(null);
 
+  // Backend integration state
+  const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState('');
+  const [apiError, setApiError] = useState(null);
+  const [hasResult, setHasResult] = useState(true); // starts on the bundled sample
+  const [isMock, setIsMock] = useState(true);
+  const [backendImage, setBackendImage] = useState(null);
+  const [missingMetadata, setMissingMetadata] = useState([]);
+  const [backendWarnings, setBackendWarnings] = useState([]);
+  const [analysisConfig, setAnalysisConfig] = useState(null);
+  const [pendingDetections, setPendingDetections] = useState(null);
+  const [thresholds, setThresholds] = useState({});
+  const [resultSource, setResultSource] = useState('sample'); // 'sample' | 'backend' | 'precomputed'
+  const uploadedFileRef = useRef(null);
+  const uploadSeq = useRef(0);
+
+  // Default thresholds for the explanation panel (placeholders, not validated limits)
+  useEffect(() => {
+    let cancelled = false;
+    getConfig()
+      .then((cfg) => {
+        if (!cancelled) setAnalysisConfig(cfg);
+      })
+      .catch(() => {
+        /* backend may be offline; the panel then shows thresholds as unavailable */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * Send the file to /api/upload so the backend reads metadata and reports what is missing.
+   * Manual values (from the form) are passed through; the backend never invents missing ones.
+   */
+  const syncWithBackend = async (file, manualMeta = {}) => {
+    const seq = ++uploadSeq.current;
+    setLoading(true);
+    setLoadingLabel('Validating image and reading metadata…');
+    setApiError(null);
+    try {
+      const res = await uploadImage(file, manualMeta);
+      if (seq !== uploadSeq.current) return;
+      const info = res.image || {};
+      setBackendImage(info);
+      setMissingMetadata(res.missing_metadata || []);
+      setBackendWarnings(res.warnings || []);
+      setImageMeta((prev) => ({
+        ...prev,
+        pixelScaleM: info.pixel_scale_m ?? null,
+        sunElevationDeg: info.sun_elevation_deg ?? null,
+        projection: info.projection ?? null,
+      }));
+    } catch (err) {
+      if (seq !== uploadSeq.current) return;
+      setApiError(err.message);
+    } finally {
+      if (seq === uploadSeq.current) setLoading(false);
+    }
+  };
+
+  /** Re-send the current file with manually entered metadata. */
+  const applyManualMetadata = (manualMeta) => {
+    if (!uploadedFileRef.current) {
+      setApiError('Upload an image first.');
+      return;
+    }
+    syncWithBackend(uploadedFileRef.current, manualMeta);
+  };
+
+  /** Load detections produced by the AI module (JSON: an array, or { detections, shadow_lengths_px, recall }). */
+  const loadDetectionsFile = async (file) => {
+    setApiError(null);
+    try {
+      const parsed = JSON.parse(await file.text());
+      const list = Array.isArray(parsed) ? parsed : parsed.detections;
+      if (!Array.isArray(list) || list.some((d) => !d || !Array.isArray(d.bbox))) {
+        throw new Error('Expected a list of detections, each with id, bbox and confidence.');
+      }
+      setPendingDetections({
+        name: file.name,
+        detections: list,
+        shadow_lengths_px: Array.isArray(parsed) ? {} : parsed.shadow_lengths_px || {},
+        recall: Array.isArray(parsed) ? null : parsed.recall || null,
+        isMock: Array.isArray(parsed) ? false : Boolean(parsed.is_mock),
+      });
+    } catch (err) {
+      setPendingDetections(null);
+      setApiError(`Could not read detections file: ${err.message}`);
+    }
+  };
+
+  const setThreshold = (key, value) =>
+    setThresholds((prev) => ({ ...prev, [key]: value === '' ? null : value }));
+  const resetThresholds = () => setThresholds({});
+
+  const thresholdOverrides = () =>
+    Object.fromEntries(
+      Object.entries(thresholds)
+        .filter(([, v]) => v !== null && v !== '' && !Number.isNaN(Number(v)))
+        .map(([k, v]) => [k, Number(v)])
+    );
+
+  /** Show a saved analysis (offline demo or a case-study JSON) without calling the backend. */
+  const applyPrecomputed = (raw, { useSampleImage }) => {
+    const n = normalizeResult(raw);
+    const info = n.image || {};
+    setImageMeta((prev) =>
+      useSampleImage
+        ? {
+            id: info.id || 'offline_demo',
+            src: sampleImageSrc,
+            width: info.width,
+            height: info.height,
+            pixelScaleM: info.pixel_scale_m ?? null,
+            sunElevationDeg: info.sun_elevation_deg ?? null,
+            projection: info.projection ?? null,
+            fileName: 'sample_lunar_illustration.png',
+            fileSize: '—',
+            isSample: true,
+          }
+        : {
+            ...prev,
+            width: info.width || prev.width,
+            height: info.height || prev.height,
+            pixelScaleM: info.pixel_scale_m ?? prev.pixelScaleM,
+            sunElevationDeg: info.sun_elevation_deg ?? prev.sunElevationDeg,
+            projection: info.projection ?? prev.projection,
+          }
+    );
+    setDetections(n.detections);
+    setHazardCells(n.hazardCells);
+    setWarnings(n.warnings);
+    setIsMock(n.isMock);
+    setHasResult(true);
+    setResultSource('precomputed');
+    setSelectedCell(null);
+    setApiError(null);
+  };
+
+  /** Offline fallback: pre-computed demo result bundled with the app (works without the backend). */
+  const loadOfflineDemo = () => {
+    uploadSeq.current += 1; // ignore any request still in flight
+    setLoading(false);
+    applyPrecomputed(sampleAnalyzeResponse, { useSampleImage: true });
+    setUploadSuccess('Offline demo loaded (pre-computed, is_mock: true). No backend needed.');
+  };
+
+  /** Load a saved /api/analyze response (for example the known-site case study) onto the current image. */
+  const loadResultFile = async (file) => {
+    setApiError(null);
+    if (imageMeta.isSample) {
+      setApiError('Upload the site image first, then load its saved result so the overlays sit on the right picture.');
+      return;
+    }
+    try {
+      const raw = JSON.parse(await file.text());
+      if (!Array.isArray(raw.hazard_cells) && !Array.isArray(raw.cells)) {
+        throw new Error('Expected an /api/analyze response with hazard_cells.');
+      }
+      applyPrecomputed({ ...raw, hazard_cells: raw.hazard_cells || raw.cells }, { useSampleImage: false });
+      setUploadSuccess(`Saved result "${file.name}" loaded (no backend call).`);
+    } catch (err) {
+      setApiError(`Could not read saved result: ${err.message}`);
+    }
+  };
+
+  /**
+   * Run /api/analyze. Uses loaded detections (real if is_mock is false) or, when none are loaded,
+   * the bundled demo detections, which are always flagged is_mock: true.
+   */
+  const runAnalysis = async () => {
+    setApiError(null);
+    setLoading(true);
+    setLoadingLabel('Running hazard analysis…');
+    try {
+      const demo = !pendingDetections;
+      const image = imageMeta.isSample
+        ? sampleAnalyzeRequest.image
+        : backendImage || {
+            id: imageMeta.id,
+            width: imageMeta.width,
+            height: imageMeta.height,
+            pixel_scale_m: imageMeta.pixelScaleM,
+            sun_elevation_deg: imageMeta.sunElevationDeg,
+            projection: imageMeta.projection,
+            metadata_source: 'unknown',
+          };
+      const payload = demo
+        ? {
+            image,
+            detections: sampleAnalyzeRequest.detections,
+            shadow_lengths_px: sampleAnalyzeRequest.shadow_lengths_px || {},
+            config: { ...sampleAnalyzeRequest.config, ...thresholdOverrides() },
+            slope_by_cell: sampleAnalyzeRequest.slope_by_cell,
+            recall: sampleAnalyzeRequest.recall,
+            is_mock: true,
+          }
+        : {
+            image,
+            detections: pendingDetections.detections,
+            shadow_lengths_px: pendingDetections.shadow_lengths_px,
+            recall: pendingDetections.recall,
+            is_mock: pendingDetections.isMock,
+            ...(Object.keys(thresholdOverrides()).length > 0
+              ? { config: { ...(analysisConfig || {}), ...thresholdOverrides() } }
+              : {}),
+          };
+      const result = await analyze(payload);
+      const n = normalizeResult(result);
+      setDetections(n.detections);
+      setHazardCells(n.hazardCells);
+      setWarnings(n.warnings);
+      setIsMock(n.isMock);
+      setHasResult(true);
+      setResultSource('backend');
+      setSelectedCell(null);
+    } catch (err) {
+      setApiError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /**
    * Reset data back to default mock lunar sample
    */
   const loadSampleData = () => {
+    uploadSeq.current += 1;
+    setLoading(false);
     setImageMeta({
       id: sampleResult.image.id,
       src: sampleImageSrc,
@@ -66,12 +298,21 @@ export function MissionProvider({ children }) {
       fileSize: '12.8 MB',
       isSample: true,
     });
-    setDetections(sampleResult.detections);
-    setHazardCells(sampleResult.hazard_cells);
-    setWarnings(sampleResult.warnings);
+    setDetections(initialNormalizedSample.detections);
+    setHazardCells(initialNormalizedSample.hazardCells);
+    setWarnings(initialNormalizedSample.warnings);
     setSelectedCell(null);
     setUploadError(null);
     setUploadNote(null);
+    setApiError(null);
+    setHasResult(true);
+    setIsMock(true);
+    setResultSource('sample');
+    setBackendImage(null);
+    setMissingMetadata([]);
+    setBackendWarnings([]);
+    setPendingDetections(null);
+    uploadedFileRef.current = null;
     setUploadSuccess('Sample illustration loaded successfully.');
   };
 
@@ -165,11 +406,22 @@ export function MissionProvider({ children }) {
         isSample: false,
       });
 
-      // Clear mock analysis data for user uploads
+      // Clear previous analysis data for user uploads
       setDetections([]);
       setHazardCells([]);
       setWarnings([]);
       setSelectedCell(null);
+      setHasResult(false);
+      setIsMock(false);
+      setResultSource('backend');
+      setBackendImage(null);
+      setMissingMetadata([]);
+      setBackendWarnings([]);
+      setPendingDetections(null);
+
+      // Ask the backend to validate the file and read metadata
+      uploadedFileRef.current = file;
+      syncWithBackend(file);
 
       setUploadSuccess(`Successfully loaded "${file.name}" (${realWidth}×${realHeight}px, ${realFormattedSize}).`);
     };
@@ -210,6 +462,25 @@ export function MissionProvider({ children }) {
         setUploadNote,
         loadSampleData,
         handleImageUpload,
+        loading,
+        loadingLabel,
+        apiError,
+        setApiError,
+        hasResult,
+        isMock,
+        missingMetadata,
+        backendWarnings,
+        analysisConfig,
+        pendingDetections,
+        loadDetectionsFile,
+        applyManualMetadata,
+        runAnalysis,
+        thresholds,
+        setThreshold,
+        resetThresholds,
+        resultSource,
+        loadOfflineDemo,
+        loadResultFile,
       }}
     >
       {children}
