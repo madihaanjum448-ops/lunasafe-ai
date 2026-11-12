@@ -1,0 +1,28 @@
+{
+  "description": "Validation protocol criteria for global boulder map comparison (Member 4 placeholders).",
+  "min_cells_required": 8,
+  "spearman_correlation_threshold": 0.6,
+  "spearman_correlation_threshold_note": "PLACEHOLDER / Unconfirmed: minimum rank correlation to claim moderate agreement.",
+  "count_ratio_bounds": [0.5, 2.0],
+  "count_ratio_bounds_note": "PLACEHOLDER / Unconfirmed: acceptable total count ratio [min, max].",
+  "bootstrap_ci": 0.9,
+  "bootstrap_reps": 1000,
+  "bootstrap_seed": 42,
+  "size_bins_m": [
+    {
+      "name": "small",
+      "min_m": 0.0,
+      "max_m": 2.0
+    },
+    {
+      "name": "medium",
+      "min_m": 2.0,
+      "max_m": 5.0
+    },
+    {
+      "name": "large",
+      "min_m": 5.0,
+      "max_m": null
+    }
+  ]
+}

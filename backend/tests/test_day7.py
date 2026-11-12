@@ -233,3 +233,81 @@ def test_known_site_runner_mock_refusal_and_execution(tmp_path):
     assert summary["slope_availability"]["assessed"] is True
     assert summary["detections_summary"]["total_detections"] == 3
 
+
+def test_compare_global_map_script(tmp_path):
+    from pathlib import Path
+    import subprocess
+    import json
+    import sys
+    import numpy as np
+
+    comp_fixtures = Path("backend/tests/fixtures/comparison")
+    grid_geo = comp_fixtures / "hazard_grid_geo.json"
+    ref_csv = comp_fixtures / "reference_boulders.csv"
+
+    # 1. Missing georeference check
+    no_geo_grid = tmp_path / "no_geo_grid.json"
+    with open(grid_geo) as f:
+        data = json.load(f)
+    data["image"]["geotransform"] = None
+    with open(no_geo_grid, "w") as f:
+        json.dump(data, f)
+
+    res_no_geo = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/compare_global_map.py",
+            "--hazard-grid", str(no_geo_grid),
+            "--reference", str(ref_csv),
+            "--out", str(tmp_path / "rep1.json"),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_no_geo.returncode == 1
+    assert "Cannot map global reference data without valid georeferencing" in res_no_geo.stderr
+
+    # 2. Valid CSV comparison
+    rep_csv = tmp_path / "rep_csv.json"
+    res_csv = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/compare_global_map.py",
+            "--hazard-grid", str(grid_geo),
+            "--reference", str(ref_csv),
+            "--ref-resolution-m", "5.0",
+            "--out", str(rep_csv),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_csv.returncode == 0
+    with open(rep_csv) as f:
+        rep = json.load(f)
+    assert rep["n_cells_compared"] == 16
+    assert rep["spearman_rank_correlation"] > 0.95
+    assert "Resolution mismatch" in rep["resolution_comparison"]["limitation"]
+    assert "correlation_met" in rep["evaluation_against_placeholders"]
+
+    # 3. Valid raster (.npy) comparison
+    ref_raster = tmp_path / "ref_raster.npy"
+    np.save(ref_raster, np.ones((4, 4), dtype=float) * 0.1)
+    rep_raster = tmp_path / "rep_raster.json"
+    res_raster = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/compare_global_map.py",
+            "--hazard-grid", str(grid_geo),
+            "--reference", str(ref_raster),
+            "--ref-type", "raster",
+            "--out", str(rep_raster),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_raster.returncode == 0
+    with open(rep_raster) as f:
+        rep_r = json.load(f)
+    assert rep_r["n_cells_compared"] == 16
+
+
