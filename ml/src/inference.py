@@ -22,6 +22,19 @@ class LunaSafeInference:
         image_size: int = 640,
         device: str | int = "cpu",
     ):
+        if not 0 <= confidence <= 1:
+            raise ValueError("Confidence must be between 0 and 1.")
+
+        if not 0 <= iou <= 1:
+            raise ValueError("IoU must be between 0 and 1.")
+
+        if (
+            isinstance(image_size, bool)
+            or not isinstance(image_size, int)
+            or image_size <= 0
+        ):
+            raise ValueError("Image size must be a positive integer.")
+
         self.model_path = Path(model_path)
         self.confidence = confidence
         self.iou = iou
@@ -58,6 +71,12 @@ class LunaSafeInference:
             raise ValueError(f"Could not read image: {image_path}")
 
         height, width = original_image.shape[:2]
+
+        if pixel_scale_m is not None and pixel_scale_m <= 0:
+            raise ValueError("Pixel scale must be positive.")
+
+        if sun_elevation_deg is not None and not 0 <= sun_elevation_deg <= 90:
+            raise ValueError("Sun elevation must be between 0 and 90 degrees.")
 
         threshold = (
             confidence if confidence is not None else self.confidence
