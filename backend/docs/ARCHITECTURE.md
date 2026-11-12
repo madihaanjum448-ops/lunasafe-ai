@@ -29,7 +29,7 @@ Units: px, metres, degrees, boulders/m² unless stated. `null` = unknown. New fi
 | `recall.json` | Member 1 / 4 | `bins[{min_diameter_m, max_diameter_m?, recall 0–1, n_ground_truth?}]`, `validation_site`, `is_mock` |
 | `measurements.json` | Member 2 | per detection: `diameter_m`, `diameter_uncertainty_m`, `height_m`, `height_uncertainty_m`, `method`, `confidence`, `is_hazardous`, `warnings` |
 | `hazard_grid.json` | Member 2 | `rows, cols, lander_footprint_*`, `hazard_cells[{row,col,score,p_hazard,interval_low,interval_high,class,label,raw_count,corrected_count,hazardous_boulder_count,largest_boulder_m,largest_height_m,largest_height_method,density,rho_h_per_m2,slope_deg,slope_gate,explanation,reasons,missing_inputs,warnings}]`, `warnings`, `disclaimer` |
-| `config.json` | Member 2 | grid size, footprint diameter, hazard height, slope gate, class thresholds, recall switch, recall_floor, sun-elevation limits, bootstrap_n, bootstrap_ci, bootstrap_seed |
+| `config.json` | Member 2 | grid size, footprint diameter, hazard height, slope gate, class thresholds, recall switch, recall_floor, sun-elevation limits, bootstrap_n, bootstrap_ci, bootstrap_seed, slope_margin_deg, use_interval_upper_bound, slope_statistic |
 
 `class` values: `safe` ("Safe candidate"), `caution`, `unsafe` ("Unsafe candidate").
 `density` is hazardous boulders per **100 m²** (what the frontend label says); `rho_h_per_m2` is the raw value.
@@ -80,6 +80,52 @@ $$P(\text{hazard}) = 1 - \exp(-\rho_h \cdot A)$$
   $$\rho_h = \frac{1}{A_{\text{cell}}} \sum_{i \in \text{haz}} \min\left(\frac{1}{R(d_i)}, \frac{1}{R_{\text{floor}}}\right)$$
 - **Monte Carlo / Bootstrap confidence:**
   Joint propagation of shadow measurement uncertainty ($\sigma_h \approx \pm 1\text{ px} \cdot \tan\theta$) and spatial shot noise via $B=1000$ vectorised replicates under 0.1 s.
+
+## Day 6 Classification & End-to-End Pipeline (FR-07, FR-08, Gate 3)
+
+### 1. Classification Engine (`app/services/classification.py`)
+Classification logic is extracted into a pure, testable function `classify_cell(...)` following strict precedence:
+1. `slope_gate == "fail"` $\to$ **Unsafe candidate** (`"slope_gate_failed"`). Absolute hard-stop: overrides $P = 0$.
+2. $P(\text{hazard}) \ge \text{unsafe\_p\_hazard}$ ($30\%$) $\to$ **Unsafe candidate** (`"p_hazard_at_or_above_unsafe_threshold"`).
+3. $P(\text{hazard}) \ge \text{caution\_p\_hazard}$ ($10\%$) $\to$ **Caution candidate** (`"p_hazard_at_or_above_caution_threshold"`).
+4. Otherwise $\to$ provisional **Safe candidate** (`"p_hazard_below_caution_threshold"`).
+5. **Mandatory Safety Downgrades** on provisional Safe candidates:
+   - `slope_gate == "not_assessed"` $\to$ **Caution** (`"downgraded_slope_not_assessed"`). A cell lacking slope data can never be certified as Safe.
+   - `unknown_height_count > 0` $\to$ **Caution** (`"downgraded_height_unknown"`).
+   - `fallback_in_cell is True` $\to$ **Caution** (`"downgraded_fallback_height"`). Provisional height assumptions cannot certify a Safe touchdown zone.
+   - `slope_margin_deg > 0.0`: A passing cell whose slope is within the configured margin of the gate ($\text{slope} > \text{gate} - \text{margin}$) is downgraded to **Caution** (`"slope_within_margin_of_gate"`). Default is `0.0` (off).
+   - `use_interval_upper_bound is True`: A Safe candidate whose 90% CI upper bound $\ge \text{unsafe\_p\_hazard}$ is downgraded to **Caution** (`"interval_reaches_unsafe_threshold"`). Default is `False` (off).
+
+**Boundary Rules:**
+- $P$ exactly equal to a threshold falls in the higher risk category ($P = 0.30 \implies \text{Unsafe}$; $P = 0.10 \implies \text{Caution}$).
+- Slope exactly equal to the slope gate passes ($\text{slope} \le \text{slope\_gate\_deg}$).
+
+**Configuration Validation:**
+- In `AnalysisConfig`: `caution_p_hazard < unsafe_p_hazard` is strictly enforced via a Pydantic `model_validator`. Any request specifying $\text{caution} \ge \text{unsafe}$ or out-of-range probabilities is rejected with HTTP 422.
+
+### 2. Slope Layer and Gate (FR-07)
+- Slope is purely a separate gate and is never used to alter $P(\text{hazard})$.
+- The DEM slope grid is calculated with the exact same rows $\times$ cols as `AnalysisConfig` to ensure spatial alignment.
+- Aggregation statistic: supports `"max"` (conservative default) or `"mean"` via `AnalysisConfig.slope_statistic`.
+- When no DEM is supplied, `slope_gate` evaluates to `"not_assessed"` across all cells, forcing all otherwise-safe cells into `Caution` with grid-level warnings.
+
+### 3. End-to-End Pipeline Endpoint (`POST /api/pipeline`)
+Provides a single unified multipart entry point:
+- Optical image file upload (`image`).
+- Optional metadata overrides (`pixel_scale_m`, `sun_elevation_deg`, `projection`).
+- Bounding-box detections JSON (as string or file).
+- Optional shadow lengths JSON, recall curve JSON, config JSON.
+- Optional DEM elevation raster (`.npy`) and `dem_cell_size_m`.
+- Response model (`PipelineResponse`):
+  `image`, `detections` (with physical `size_m` filled), `measurements`, `hazard_cells` (with probabilities, intervals, classifications, and rule-based explanations), `warnings`, `disclaimer`, `is_mock`.
+
+### 4. Day 6 / Gate 3 Status
+- **Gate 3 Criteria:** One image runs through the full pipeline from upload to hazard map with probability, bootstrap interval, slope gate (or explicit missing marker), and rule-based explanations.
+- **Verification Status:** **PASS** (demonstrated across 51 automated tests).
+- **Honest Provenance & Limitations:**
+  - Demonstrated end-to-end on synthetic images, mock detector outputs, and synthetic DEM rasters (`is_mock: True`).
+  - Real LROC NAC optical images and high-resolution stereo DEMs have not yet been downloaded or coregistered.
+  - Thresholds ($0.5\text{ m}$ height, $10.0^\circ$ slope gate, $10\% / 30\%$ class boundaries) remain engineering working defaults / placeholders awaiting PRD v2.0 sign-off from Member 4.
 
 ## Known limits
 - Shadow *measurement* (finding shadow length in the image) is not implemented; the API takes `shadow_lengths_px` as input. Someone must supply it (Member 1's model or a later step).

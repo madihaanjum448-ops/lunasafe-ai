@@ -539,7 +539,10 @@
     "pixel_uncertainty_px": 1.0,
     "bootstrap_n": 1000,
     "bootstrap_ci": 0.9,
-    "bootstrap_seed": 42
+    "bootstrap_seed": 42,
+    "slope_margin_deg": 0.0,
+    "use_interval_upper_bound": false,
+    "slope_statistic": "max"
   },
   "slope_by_cell": [
     [

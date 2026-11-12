@@ -3,10 +3,11 @@
 ## Test Environment Verification Note
 - **Environment**: Windows 11 (win32), Python 3.15.1, pytest 9.2.0, pluggy 1.7.0.
 - **Verification execution**: Virtual environment created at `backend/.venv`, all dependencies from `requirements.txt` installed.
-- **Real test suite result**: **41 passed, 1 warning in 1.19s**.
+- **Real test suite result**: **51 passed, 1 warning in 1.09s**.
   - All 26 original unit and integration tests passed.
   - 7 edge-case and hardening tests (float bboxes, grid dilution warnings, helper, slope mismatch, boundary centers, zero recall bins, NaN/inf inputs) passed.
-  - 8 new Day 5 tests covering recall correction caps, largest height method, edge-clipped bboxes, Poisson hand-computations, zero-boulder bootstrap, fallback uncertainty intervals, CI reproducibility & bracketing, and 64-cell performance (<0.1s) passed.
+  - 8 Day 5 tests covering recall correction caps, largest height method, edge-clipped bboxes, Poisson hand-computations, zero-boulder bootstrap, fallback uncertainty intervals, CI reproducibility & bracketing, and 64-cell performance (<0.1s) passed.
+  - 10 new Day 6 tests covering classification truth tables, threshold boundary rules, downgrade reasons, optional slope margin & interval upper-bound proposals, Pydantic threshold validator (caution < unsafe), end-to-end multipart pipeline execution with/without DEM and sun angle, and 4xx error handling passed.
 
 ---
 
@@ -110,7 +111,30 @@ Branch: `member2/day5-footprint-recall-interval`
 
 ---
 
-## 5. Unconfirmed Placeholders vs PRD v2.0
+## 5. Day 6 Implementation & Gate 3 Log
+Branch: `member2/day6-classification-pipeline`
+
+1. **`13d3263` refactor(classification): extract classify_cell and explain_cell**
+   - Extracted cell classification into pure, stateless functions in `app/services/classification.py`.
+   - Preserved strict precedence: (1) slope gate fail -> Unsafe hard-stop; (2) P >= unsafe -> Unsafe; (3) P >= caution -> Caution; (4) Safe candidate; (5) Safe downgraded to Caution if slope not assessed, height unknown, or height provisional fallback.
+   - Refactored `hazard.py` to use `classification.py` and evaluate bootstrap intervals prior to classification.
+
+2. **`f8a1746` feat(config): configurable classification thresholds, slope margin, and validator**
+   - Added Pydantic `model_validator` on `AnalysisConfig` enforcing `caution_p_hazard < unsafe_p_hazard` (both in $[0, 1]$) returning HTTP 422 if violated.
+   - Added optional proposal fields: `slope_margin_deg` (default 0.0) and `use_interval_upper_bound` (default False).
+   - Added `slope_statistic` supporting `"max"` (conservative default) and `"mean"`.
+
+3. **`6824e1d` feat(pipeline): end-to-end multipart pipeline endpoint with honest missing inputs**
+   - Implemented `POST /api/pipeline` taking multipart image, metadata overrides, detections (file or string), optional shadows, recall, config, and optional DEM raster (.npy).
+   - Returns complete `PipelineResponse` with image metadata, measured detections (`size_m`), measurements, hazard cells, aggregated warnings, disclaimer, and `is_mock` flag.
+   - Implemented honest missing input handling: missing sun angle -> fallback heights excluded from hazard counts; missing DEM -> slope not assessed, no safe cells; missing pixel scale -> HTTP 422; mismatched shadow detection IDs -> HTTP 422.
+
+4. **`36bec69` test(day6): classification truth table, threshold validation, and end-to-end pipeline tests**
+   - 10 new tests in `tests/test_day6.py` covering all classification paths, boundary values, proposals, threshold validator, and pipeline multipart flows.
+
+---
+
+## 6. Unconfirmed Placeholders vs PRD v2.0
 The following values remain placeholders in `app/core/config.py` and `app/schemas/contracts.py` as PRD v2.0 was not provided:
 - **Lander footprint diameter**: `10.0 m` (`lander_footprint_diameter_m`)
 - **Hazardous boulder height threshold**: `0.5 m` (`hazard_boulder_height_m`)
@@ -119,12 +143,17 @@ The following values remain placeholders in `app/core/config.py` and `app/schema
 - **Fallback height-to-diameter ratio**: `0.5` (`FALLBACK_HEIGHT_TO_DIAMETER_RATIO` in `app/services/measurement.py`)
 - **Default grid resolution**: `8x8` (`grid_rows`, `grid_cols`)
 - **Recall floor cap**: `0.2` (`recall_floor` in `app/schemas/contracts.py`)
-- **Parametric Poisson fallback for < 5 detections**: Implemented to avoid zero-variance collapse; flagged for team confirmation against PRD v2.0 Section 6.
+- **Parametric Poisson fallback for < 5 detections**: Flagged for team confirmation against PRD v2.0 Section 6.
+- **Slope margin and interval upper bound**: Proposals flagged for team review.
 
 ---
 
-## 6. Dependencies Blocked on Member 1
-- **Model Checkpoint & Weights**: Real boulder detection model weights.
-- **Real Detections**: Detector output format `[x1, y1, x2, y2]` with confidence scores for cropped lunar images.
-- **Recall Table (`recall.json`)**: Empirical recall values binned by boulder diameter for the detector. (All Day 5 outputs continue to be marked `is_mock: True` / `recall: placeholder` until received).
-- **Shadow Segmentation / Lengths**: Extraction of pixel shadow lengths (`shadow_lengths_px`) per boulder to compute physical heights without fallback.
+## 7. Dependencies Blocked on Other Members
+- **Blocked on Member 1 (ML / Detection)**:
+  - Real boulder detection model weights (YOLOv8-seg).
+  - Detector output format `[x1, y1, x2, y2]` with confidence scores for cropped lunar images.
+  - Empirical validation recall table (`recall.json`). (All outputs remain `is_mock: True` / `recall: placeholder` until received).
+  - Optical shadow segmentation to generate `shadow_lengths_px` without user manual input.
+- **Blocked on Member 4 (Scientific Validation / PRD v2.0)**:
+  - Formal sign-off on PRD v2.0 threshold values ($0.5\text{ m}$ height, $10.0^\circ$ slope gate, $10\% / 30\%$ class boundaries).
+  - Lunar landing site selection coordinates and real LROC/LOLA DEM data products.
