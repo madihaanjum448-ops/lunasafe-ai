@@ -566,7 +566,9 @@
     }
   ],
   "warnings": [
+    "Shadow-based height measurement assumes locally flat ground.",
     "Reported uncertainty excludes uncertainty in Sun elevation and pixel scale.",
+    "Heights are unvalidated: no reference height set.",
     "Grid cell area (15625.0 m2) is more than 10x the lander footprint area (78.5 m2). Large cells dilute boulder density and may underestimate localized hazard probability; consider using a finer grid.",
     "Parametric Poisson resampling was used for uncertainty intervals in 11 cell(s) with < 5 detections.",
     "Some heights use the diameter-based fallback assumption. These provisional values were excluded from confirmed hazardous-boulder counts and must not be interpreted as physical height measurements."

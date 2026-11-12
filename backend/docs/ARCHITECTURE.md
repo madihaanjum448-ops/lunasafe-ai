@@ -127,8 +127,99 @@ Provides a single unified multipart entry point:
   - Real LROC NAC optical images and high-resolution stereo DEMs have not yet been downloaded or coregistered.
   - Thresholds ($0.5\text{ m}$ height, $10.0^\circ$ slope gate, $10\% / 30\%$ class boundaries) remain engineering working defaults / placeholders awaiting PRD v2.0 sign-off from Member 4.
 
+## Day 7 Additions
+
+### 1. Height Estimation with Propagated Uncertainty (FR-04)
+- **Analytical Uncertainty Propagation:**
+  $$\sigma_h^2 = (\tan(e) \cdot \sigma_L)^2 + (L \cdot \sec^2(e) \cdot \sigma_{e,\text{rad}})^2$$
+  where $L = \text{shadow\_length\_m} = s_{\text{px}} \cdot \text{pixel\_scale\_m}$, $e = \text{sun\_elevation\_rad}$, $\sigma_L = \text{pixel\_uncertainty\_px} \cdot \text{pixel\_scale\_m}$, and $\sigma_{e,\text{rad}} = \text{radians}(\sigma_e)$.
+  Controlled by `AnalysisConfig.sun_elevation_uncertainty_deg` (default 0.0 deg for backward compatibility; unconfirmed proposal).
+  When $\sigma_e = 0$, the formula simplifies identically to the previous $\sigma_h = \tan(e) \sigma_L$.
+- **Shadow Quality Assessment (`ShadowQuality`):**
+  - `"good"`: standard shadow geometry confidence (high if detection confidence $\ge 0.8$ and Sun elevation reliable).
+  - `"fair"`: confidence capped at `medium` (cannot be `high`).
+  - `"poor"`: height cannot establish confirmed hazard status (`is_hazardous = None`, confidence `low`). Treated as an unmeasured/unknown height in `hazard.py` (excluded from raw and corrected hazardous boulder counts, triggers caution downgrade).
+- **Ground-Truth Height Reference Validation:**
+  - Optional `reference_heights_m` dictionary by detection ID in `measure_detections` and `MeasureRequest`.
+  - Computes Mean Absolute Error ($MAE$) and Bias ($h_{\text{est}} - h_{\text{ref}}$) across matching measured detections.
+  - Stamps `height_validated = True` with `reference_count = n`, `height_mae_m`, and `height_bias_m`.
+  - When reference heights are missing, `height_validated = False` and explicitly warns: *"Heights are unvalidated: no reference height set."*
+
+### 2. Known-Site Execution Pipeline (`scripts/run_known_site.py`)
+- CLI runner that ingests image, detections, optional shadows, shadow quality, recall curve, DEM, and configuration.
+- Calls identical backend services as `POST /api/pipeline` without logic duplication.
+- Enforces strict mock refusal: if `detections.is_mock == True`, refuses to run unless `--allow-mock` is explicitly supplied.
+- Produces 4 audit-trail files in `--out`:
+  1. `measurements.json`: serialized `MeasurementsFile` with uncertainties and quality flags.
+  2. `hazard_grid.json`: serialized `HazardGridFile` with cell probabilities, intervals, and classifications.
+  3. `summary.json`: summary statistics (class counts, exclusion reasons, methods, slope status, warnings).
+  4. `run_manifest.json`: reproducibility manifest with git commit hash, SHA-256 hashes of all input files, config used, seed, UTC timestamp, mock flag, and unconfirmed PRD placeholders.
+
+### 3. Global Boulder Map Comparison (`scripts/compare_global_map.py`)
+- Compares pipeline hazard grid against published global boulder reference data.
+- Supports two input formats:
+  - Point CSV (`lon, lat` or `x, y`, `diameter`).
+  - Density raster (`.npy` array or GeoTIFF).
+- Enforces strict georeferencing: uses image `geotransform` and CRS from `ImageInfo`. If geotransform is missing, refuses to guess coordinates and exits with a clear error.
+- Computes:
+  - Spearman rank correlation ($r_s$) across grid cells with bootstrap confidence interval (deterministic seed).
+  - Total count ratio ($\sum k_{\text{pipeline}} / \sum k_{\text{ref}}$).
+  - Per-size-bin comparison against reference diameters.
+  - Warns of spatial resolution mismatch between global product and high-resolution optical imagery.
+- Uses configurable criteria in `scripts/comparison_config.json` with clearly marked placeholders.
+
+### 4. Parameter Sensitivity Analysis (`scripts/sensitivity.py`)
+- Sweeps three primary pipeline variables:
+  1. Lander footprint diameter ($6, 8, 10, 12, 15\text{ m}$)
+  2. Hazard height threshold ($0.3, 0.4, 0.5, 0.6, 0.8\text{ m}$)
+  3. Detector recall scaling factor ($\times 0.70, \times 0.85, \times 1.0, \times 1.15, \times 1.30$, capped at 1.0)
+- Outputs `results/sensitivity/sensitivity.csv` and `sensitivity.json` with manifest metadata.
+- Guarantees:
+  - Baseline row matches default pipeline execution.
+  - Larger footprint diameter mathematically never lowers $P(\text{hazard})$ for any cell ($\frac{\partial P}{\partial A} \ge 0$).
+
+## How to Reproduce a Run
+
+```powershell
+# 1. Run known-site pipeline with synthetic fixtures
+python backend/scripts/run_known_site.py `
+  --image backend/tests/fixtures/known_site/image.png `
+  --detections backend/tests/fixtures/known_site/detections_mock.json `
+  --shadows backend/tests/fixtures/known_site/shadows.json `
+  --quality backend/tests/fixtures/known_site/quality.json `
+  --dem backend/tests/fixtures/known_site/dem.npy `
+  --dem-cell-size 2.5 `
+  --recall backend/tests/fixtures/known_site/recall.json `
+  --pixel-scale 0.5 `
+  --sun-elevation 30.0 `
+  --allow-mock `
+  --out backend/results/known_site
+
+# 2. Compare against reference boulder map
+python backend/scripts/compare_global_map.py `
+  --hazard-grid backend/tests/fixtures/comparison/hazard_grid_geo.json `
+  --reference backend/tests/fixtures/comparison/reference_boulders.csv `
+  --ref-resolution-m 5.0 `
+  --out backend/results/comparison/report.json
+
+# 3. Run parameter sensitivity sweep
+python backend/scripts/sensitivity.py `
+  --image backend/tests/fixtures/known_site/image.png `
+  --detections backend/tests/fixtures/known_site/detections_mock.json `
+  --shadows backend/tests/fixtures/known_site/shadows.json `
+  --quality backend/tests/fixtures/known_site/quality.json `
+  --dem backend/tests/fixtures/known_site/dem.npy `
+  --dem-cell-size 2.5 `
+  --recall backend/tests/fixtures/known_site/recall.json `
+  --pixel-scale 0.5 `
+  --sun-elevation 30.0 `
+  --allow-mock `
+  --out-dir backend/results/sensitivity
+```
+
 ## Known limits
 - Shadow *measurement* (finding shadow length in the image) is not implemented; the API takes `shadow_lengths_px` as input. Someone must supply it (Member 1's model or a later step).
 - Flat-ground assumption in the shadow formula; local slope makes heights wrong. Uncertainty does not cover this.
 - Boulder ↔ cell assignment uses the bbox centre. Cells smaller than the lander footprint trigger a warning.
 - DEM alignment is assumed, not computed (see `DEM_RESEARCH.md`).
+- Global boulder map comparison requires projected/geographic geotransform on the target image.

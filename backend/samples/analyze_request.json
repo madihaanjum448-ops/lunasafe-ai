@@ -537,6 +537,7 @@
     "shadow_height_min_sun_elevation_deg": 5.0,
     "shadow_height_max_sun_elevation_deg": 80.0,
     "pixel_uncertainty_px": 1.0,
+    "sun_elevation_uncertainty_deg": 0.0,
     "bootstrap_n": 1000,
     "bootstrap_ci": 0.9,
     "bootstrap_seed": 42,

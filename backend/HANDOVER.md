@@ -132,9 +132,81 @@ Branch: `member2/day6-classification-pipeline`
 4. **`36bec69` test(day6): classification truth table, threshold validation, and end-to-end pipeline tests**
    - 10 new tests in `tests/test_day6.py` covering all classification paths, boundary values, proposals, threshold validator, and pipeline multipart flows.
 
+## 6. Day 7 Work Completed (Branch: `member2/day7-known-site`)
+
+### 1. Height Estimation with Propagated Uncertainty (FR-04)
+- Implemented Gaussian bivariate uncertainty propagation:
+  $$\sigma_h^2 = (\tan(e)\sigma_L)^2 + (L\sec^2(e)\sigma_{e,\text{rad}})^2$$
+- Added `sun_elevation_uncertainty_deg` to `AnalysisConfig` (default 0.0 for backward compatibility).
+- Supported `shadow_quality` flags: `"good"`, `"fair"`, `"poor"`. Poor shadows exclude height from confirming hazard status (treated as unknown height, confidence low). Fair shadows cap confidence at medium.
+- Added reference validation metrics to `MeasurementsFile`: `height_validated`, `reference_count`, `height_mae_m`, `height_bias_m`. When no reference set is passed, stamps `height_validated: False` and emits explicit warning.
+
+### 2. Known-Site Runner Script (`backend/scripts/run_known_site.py`)
+- CLI runner that accepts `--image`, `--detections`, `--shadows`, `--quality`, `--dem`, `--dem-cell-size`, `--recall`, `--config`, `--out`, `--allow-mock`.
+- Refuses to run if `detections.is_mock == True` without `--allow-mock`.
+- Writes `measurements.json`, `hazard_grid.json`, `summary.json`, and `run_manifest.json` (SHA-256 of all input files, commit hash, config, UTC timestamp, PRD placeholders).
+
+### 3. Published Global Boulder Map Comparison (`backend/scripts/compare_global_map.py`)
+- Ingests reference CSV or `.npy` density raster.
+- Strictly maps reference data onto hazard grid cells using image `geotransform` and CRS; refuses to guess coordinates if missing.
+- Computes cell-level Spearman rank correlation ($r_s$) with bootstrap confidence interval (deterministic seed).
+- Computes total count ratio and per-size-bin comparison.
+- Evaluates against criteria in `backend/scripts/comparison_config.json` and prints resolution mismatch warning.
+
+### 4. Parameter Sensitivity Sweep (`backend/scripts/sensitivity.py`)
+- Sweeps lander footprint diameter (6, 8, 10, 12, 15 m), hazard height threshold (0.3, 0.4, 0.5, 0.6, 0.8 m), and recall scaling ($\times 0.70$ to $\times 1.30$).
+- Outputs `results/sensitivity/sensitivity.csv` and `sensitivity.json`.
+- Mathematically verified: larger footprint diameter never lowers $P(\text{hazard})$ for any cell.
+
 ---
 
-## 6. Unconfirmed Placeholders vs PRD v2.0
+## 7. Exact Missing Real Inputs and Execution Commands
+
+Currently all code runs and passes verification against **synthetic fixtures** (`is_mock: True`).
+When real data products arrive from Member 1 and Member 4, run the following exact commands:
+
+1. **When Member 1 delivers real detections, shadows, and quality flags (`data/known_site/`):**
+   ```powershell
+   python backend/scripts/run_known_site.py `
+     --image data/known_site/M1141323068LE.png `
+     --detections data/known_site/detections.json `
+     --shadows data/known_site/shadows.json `
+     --quality data/known_site/shadow_quality.json `
+     --dem data/known_site/site_dem.npy `
+     --dem-cell-size 2.0 `
+     --recall data/known_site/recall.json `
+     --pixel-scale 0.50 `
+     --sun-elevation 28.5 `
+     --out backend/results/known_site_real/
+   ```
+
+2. **When Member 4 delivers the published global boulder reference dataset (`data/global_map/`):**
+   ```powershell
+   python backend/scripts/compare_global_map.py `
+     --hazard-grid backend/results/known_site_real/hazard_grid.json `
+     --reference data/global_map/global_boulders_reference.csv `
+     --ref-resolution-m 5.0 `
+     --out backend/results/comparison/real_comparison_report.json
+   ```
+
+3. **When running sensitivity on real site detections:**
+   ```powershell
+   python backend/scripts/sensitivity.py `
+     --image data/known_site/M1141323068LE.png `
+     --detections data/known_site/detections.json `
+     --shadows data/known_site/shadows.json `
+     --quality data/known_site/shadow_quality.json `
+     --dem data/known_site/site_dem.npy `
+     --dem-cell-size 2.0 `
+     --recall data/known_site/recall.json `
+     --pixel-scale 0.50 `
+     --sun-elevation 28.5 `
+     --out-dir backend/results/sensitivity_real/
+   ```
+
+---
+
+## 8. Unconfirmed Placeholders vs PRD v2.0
 The following values remain placeholders in `app/core/config.py` and `app/schemas/contracts.py` as PRD v2.0 was not provided:
 - **Lander footprint diameter**: `10.0 m` (`lander_footprint_diameter_m`)
 - **Hazardous boulder height threshold**: `0.5 m` (`hazard_boulder_height_m`)
@@ -145,15 +217,16 @@ The following values remain placeholders in `app/core/config.py` and `app/schema
 - **Recall floor cap**: `0.2` (`recall_floor` in `app/schemas/contracts.py`)
 - **Parametric Poisson fallback for < 5 detections**: Flagged for team confirmation against PRD v2.0 Section 6.
 - **Slope margin and interval upper bound**: Proposals flagged for team review.
+- **Sun elevation uncertainty**: `0.0 deg` default proposal.
 
 ---
 
-## 7. Dependencies Blocked on Other Members
+## 9. Dependencies Blocked on Other Members
 - **Blocked on Member 1 (ML / Detection)**:
-  - Real boulder detection model weights (YOLOv8-seg).
-  - Detector output format `[x1, y1, x2, y2]` with confidence scores for cropped lunar images.
-  - Empirical validation recall table (`recall.json`). (All outputs remain `is_mock: True` / `recall: placeholder` until received).
-  - Optical shadow segmentation to generate `shadow_lengths_px` without user manual input.
+  - Real boulder detection model weights (YOLOv8-seg) and detections JSON for the selected known site.
+  - Optical shadow segmentation to generate `shadow_lengths_px` and `shadow_quality` without manual input.
+  - Empirical validation recall table (`recall.json`).
 - **Blocked on Member 4 (Scientific Validation / PRD v2.0)**:
   - Formal sign-off on PRD v2.0 threshold values ($0.5\text{ m}$ height, $10.0^\circ$ slope gate, $10\% / 30\%$ class boundaries).
   - Lunar landing site selection coordinates and real LROC/LOLA DEM data products.
+  - Choice and format of the published global boulder reference dataset.
