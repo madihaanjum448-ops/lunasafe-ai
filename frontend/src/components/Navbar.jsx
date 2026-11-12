@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useMission } from '../context/useMission';
+import ResultBadge from './ResultBadge';
 
 export default function Navbar() {
   const { imageMeta } = useMission();
@@ -35,9 +36,7 @@ export default function Navbar() {
                   <span className="text-lg font-bold tracking-tight text-white group-hover:text-cyan-300 transition-colors">
                     LunaSafe <span className="text-cyan-400">AI</span>
                   </span>
-                  <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    Mock Data
-                  </span>
+                  <ResultBadge />
                 </div>
                 <p className="text-[11px] text-slate-400 leading-none hidden sm:block">
                   Lunar Landing-Site Safety Assessment
@@ -147,7 +146,7 @@ export default function Navbar() {
             <span>
               Scale: {imageMeta.pixelScaleM ? `${imageMeta.pixelScaleM} m/px ${imageMeta.isSample ? '(Mock value)' : ''}` : 'Unavailable'}
             </span>
-            <span className="text-amber-400 font-medium">Mock Data</span>
+            <ResultBadge />
           </div>
         </div>
       )}

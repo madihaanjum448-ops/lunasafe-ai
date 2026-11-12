@@ -69,7 +69,7 @@ function LayersPanel() {
         {toggleRow('Confidence labels', showConfidenceLabels, setShowConfidenceLabels,
           showBoulderBoxes ? null : 'Enable boulder boxes first')}
         {toggleRow('Hazard heatmap', showHeatmap, setShowHeatmap,
-          '8 × 8 grid (Mock data)')}
+          'Hazard grid')}
       </div>
 
       {/* Confidence band colour legend */}
@@ -104,6 +104,10 @@ export default function DetectionsPage() {
     loadSampleData,
     showBoulderBoxes,
     showConfidenceLabels,
+    hasResult,
+    isMock,
+    loading,
+    apiError,
   } = useMission();
 
   const [selectedDetection, setSelectedDetection] = useState(null);
@@ -113,7 +117,7 @@ export default function DetectionsPage() {
   );
 
   // True when the sample is loaded but the slider has filtered out every box
-  const allFilteredOut = imageMeta.isSample && detections.length > 0 && visibleDetections.length === 0;
+  const allFilteredOut = hasResult && detections.length > 0 && visibleDetections.length === 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -125,21 +129,21 @@ export default function DetectionsPage() {
               Obstacle Detection Module
             </span>
             <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-              {imageMeta.isSample ? 'Mock Data' : 'User Upload'}
+              {hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             High-Resolution Boulder Detections
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            {imageMeta.isSample
+            {hasResult
               ? 'Pan and zoom across the landing site. Each detected surface hazard is framed with a confidence-coloured bounding box. Toggle layers and adjust the threshold using the controls below.'
               : 'Pan and zoom across your uploaded lunar image.'}
           </p>
         </div>
 
         {/* Summary badges (sample only) */}
-        {imageMeta.isSample && (
+        {hasResult && (
           <div className="flex items-center gap-2 self-start md:self-auto">
             <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center gap-2">
               <span className="text-slate-400">Total Catalog:</span>
@@ -154,7 +158,7 @@ export default function DetectionsPage() {
       </div>
 
       {/* ── "Not processed yet" banner for real uploads ── */}
-      {!imageMeta.isSample && (
+      {!hasResult && (
         <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
           <div className="flex items-center gap-3">
             <svg className="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,10 +166,10 @@ export default function DetectionsPage() {
             </svg>
             <div>
               <span className="font-semibold block sm:inline">
-                Not processed yet. The analysis backend is not connected.
+                {loading ? 'Working…' : apiError ? `Not processed: ${apiError}` : 'Not processed yet. Run the analysis on the Upload page.'}
               </span>
               <span className="text-xs text-amber-300/80 sm:ml-2 block sm:inline">
-                Mock detections are hidden for user uploads.
+                Detections appear after you run the analysis.
               </span>
             </div>
           </div>
@@ -179,10 +183,10 @@ export default function DetectionsPage() {
       )}
 
       {/* ── Warnings banner (sample only) ── */}
-      {imageMeta.isSample && <WarningsBanner />}
+      {hasResult && <WarningsBanner />}
 
       {/* ── Confidence threshold slider (sample only) ── */}
-      {imageMeta.isSample && <ConfidenceSlider />}
+      {hasResult && <ConfidenceSlider />}
 
       {/* ── Main workspace ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -190,9 +194,9 @@ export default function DetectionsPage() {
         {/* Left: image viewer */}
         <div className="lg:col-span-8 xl:col-span-9">
           <ImageViewer
-            overlayTitle={imageMeta.isSample ? 'Boulder Detection Layer' : 'Uploaded Image Viewer'}
+            overlayTitle={hasResult ? 'Boulder Detection Layer' : 'Uploaded Image Viewer'}
             extraToolbarActions={
-              imageMeta.isSample ? (
+              hasResult ? (
                 <span className="text-xs font-mono text-cyan-400">
                   Filter: ≥ {(confidenceThreshold * 100).toFixed(0)}%
                 </span>
@@ -201,7 +205,7 @@ export default function DetectionsPage() {
               )
             }
           >
-            {imageMeta.isSample && (
+            {hasResult && (
               <>
                 {/* Heatmap layer (shared with Hazard Map page via context) */}
                 <HazardGridOverlay />
@@ -231,7 +235,7 @@ export default function DetectionsPage() {
         <div className="lg:col-span-4 xl:col-span-3 space-y-4">
 
           {/* Layers panel (sample only) */}
-          {imageMeta.isSample && <LayersPanel />}
+          {hasResult && <LayersPanel />}
 
           {/* Boulder Inspector card */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
@@ -250,7 +254,7 @@ export default function DetectionsPage() {
               )}
             </div>
 
-            {imageMeta.isSample ? (
+            {hasResult ? (
               selectedDetection ? (
                 <div className="space-y-3.5 text-xs">
                   <div className="p-3 rounded-xl bg-slate-950 border border-cyan-500/40 flex items-center justify-between">
@@ -357,7 +361,7 @@ export default function DetectionsPage() {
                 </div>
                 <p className="font-medium text-slate-200">No Detection Data</p>
                 <p className="text-[11px] text-amber-300/90 max-w-[200px] mx-auto leading-relaxed">
-                  Not processed yet. The analysis backend is not connected.
+                  {loading ? 'Working…' : apiError ? `Not processed: ${apiError}` : 'Not processed yet. Run the analysis on the Upload page.'}
                 </p>
               </div>
             )}

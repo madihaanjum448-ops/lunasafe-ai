@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMission } from '../context/useMission';
 import { HAZARD_LABELS, CANDIDATE_ONLY_NOTE } from '../constants/schema';
+import ResultBadge from './ResultBadge';
 
 export default function HazardLegend() {
   const {
@@ -9,16 +10,18 @@ export default function HazardLegend() {
     setShowHeatmap,
     showDetectionsInHazardMap,
     setShowDetectionsInHazardMap,
-    imageMeta,
+    hasResult,
+    loading,
+    apiError,
   } = useMission();
 
-  if (!imageMeta.isSample) {
+  if (!hasResult) {
     return (
       <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 backdrop-blur-sm shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-slate-300">
           <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           <span className="font-semibold text-slate-200">Hazard Heatmap Layer:</span>
-          <span className="text-amber-300 font-mono">Not processed yet. The analysis backend is not connected.</span>
+          <span className="text-amber-300 font-mono">{loading ? 'Working…' : apiError ? `Not processed: ${apiError}` : 'Not processed yet. Run the analysis on the Upload page.'}</span>
         </div>
         <span className="text-slate-400 text-[11px]">0 cells available</span>
       </div>
@@ -41,11 +44,7 @@ export default function HazardLegend() {
           <h3 className="font-semibold text-slate-100 text-sm">Hazard Evaluation Legend</h3>
         </div>
 
-        {/* Visible Mock Data badge */}
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold uppercase tracking-wider">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-          Mock Data
-        </div>
+        <ResultBadge />
       </div>
 
       {/* Layer Toggles */}

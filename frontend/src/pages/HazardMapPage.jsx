@@ -5,10 +5,11 @@ import DetectionOverlay from '../components/DetectionOverlay';
 import HazardLegend from '../components/HazardLegend';
 import RegionExplanationPanel from '../components/RegionExplanationPanel';
 import WarningsBanner from '../components/WarningsBanner';
+import ThresholdControls from '../components/ThresholdControls';
 import { useMission } from '../context/useMission';
 
 export default function HazardMapPage() {
-  const { showHeatmap, showDetectionsInHazardMap, selectedCell, imageMeta, loadSampleData } = useMission();
+  const { showHeatmap, showDetectionsInHazardMap, selectedCell, loadSampleData, hasResult, isMock, loading, apiError } = useMission();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -20,21 +21,21 @@ export default function HazardMapPage() {
               Candidate Hazard Analytics
             </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold tracking-wide">
-              {imageMeta.isSample ? 'Mock Data' : 'User Upload'}
+              {hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Lunar Surface Hazard Map
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            {imageMeta.isSample
+            {hasResult
               ? '8×8 candidate evaluation grid categorized into Safe candidate (green), Caution (yellow), Unsafe candidate (red), and Not assessed (grey). Candidate regions only. This is not a landing safety certification.'
               : 'Pan and zoom across your uploaded lunar image.'}
           </p>
         </div>
 
         {/* Prominent Header Badge: Mock Data Indicator (shown on sample illustration) */}
-        {imageMeta.isSample && (
+        {hasResult && (
           <div className="flex items-center gap-2 self-start md:self-auto">
             <div className="px-3.5 py-2 rounded-xl bg-slate-900 border border-amber-500/30 flex items-center gap-2.5 shadow-lg">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
@@ -43,7 +44,7 @@ export default function HazardMapPage() {
                   Evaluation Mode
                 </span>
                 <span className="text-xs font-bold text-amber-300 font-mono">
-                  Mock Data Stream
+                  {isMock ? 'Mock Data Stream' : 'Real AI result'}
                 </span>
               </div>
             </div>
@@ -52,7 +53,7 @@ export default function HazardMapPage() {
       </div>
 
       {/* Prominent Message when User Upload is Active */}
-      {!imageMeta.isSample && (
+      {!hasResult && (
         <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
           <div className="flex items-center gap-3">
             <svg className="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,10 +61,10 @@ export default function HazardMapPage() {
             </svg>
             <div>
               <span className="font-semibold block sm:inline">
-                Not processed yet. The analysis backend is not connected.
+                {loading ? 'Working…' : apiError ? `Not processed: ${apiError}` : 'Not processed yet. Run the analysis on the Upload page.'}
               </span>
               <span className="text-xs text-amber-300/80 sm:ml-2 block sm:inline">
-                Hazard grid evaluation requires connection to the backend pipeline.
+                The hazard grid appears after you run the analysis.
               </span>
             </div>
           </div>
@@ -77,19 +78,21 @@ export default function HazardMapPage() {
       )}
 
       {/* Descent Warnings if present on sample */}
-      {imageMeta.isSample && <WarningsBanner />}
+      {hasResult && <WarningsBanner />}
 
       {/* Legend & Layer Controls */}
       <HazardLegend />
+
+      <ThresholdControls showRun />
 
       {/* Main Workspace: Pan-and-zoom hazard map & Region Explanation side panel */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Interactive Hazard Heatmap Canvas */}
         <div className="lg:col-span-7 xl:col-span-8">
           <ImageViewer
-            overlayTitle={imageMeta.isSample ? "8×8 Safety Partition Heatmap" : "Uploaded Image Viewer"}
+            overlayTitle={hasResult ? "Safety Partition Heatmap" : "Uploaded Image Viewer"}
             extraToolbarActions={
-              imageMeta.isSample ? (
+              hasResult ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono text-slate-400">
                     Heatmap: {showHeatmap ? <span className="text-emerald-400">Active</span> : <span className="text-slate-500">Hidden</span>}
@@ -108,10 +111,10 @@ export default function HazardMapPage() {
             }
           >
             {/* Heatmap 8x8 Grid SVG Layer (only rendered on sample data) */}
-            {imageMeta.isSample && <HazardGridOverlay />}
+            {hasResult && <HazardGridOverlay />}
 
             {/* Optional Boulder Detections Layer on top (only on sample data) */}
-            {imageMeta.isSample && showDetectionsInHazardMap && <DetectionOverlay />}
+            {hasResult && showDetectionsInHazardMap && <DetectionOverlay />}
           </ImageViewer>
         </div>
 

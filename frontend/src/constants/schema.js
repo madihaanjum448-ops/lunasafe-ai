@@ -65,8 +65,9 @@ export const SLOPE_STATUS = {
  * Placeholder value list for height_method (not confirmed yet).
  */
 export const HEIGHT_METHODS = {
-  SHADOW: 'shadow',
+  SHADOW: 'shadow_geometry',
   DIAMETER_FALLBACK: 'diameter_fallback',
+  UNAVAILABLE: 'unavailable',
 };
 
 /**
@@ -164,71 +165,109 @@ export function getLabelColorConfig(label) {
 }
 
 /**
- * Normalizes a single raw boulder detection from the backend.
- *
- * @param {Object} raw
- * @returns {Object|null}
+ * Backend hazard class (enum value) -> display label.
  */
-export function normalizeBoulder(raw) {
+export const CLASS_TO_LABEL = {
+  safe: HAZARD_LABELS.SAFE_CANDIDATE,
+  caution: HAZARD_LABELS.CAUTION,
+  unsafe: HAZARD_LABELS.UNSAFE_CANDIDATE,
+};
+
+/**
+ * Human-readable height method text. Fallback is always flagged low confidence.
+ */
+export function describeHeightMethod(method) {
+  if (method === HEIGHT_METHODS.SHADOW || method === 'shadow') return 'Shadow geometry';
+  if (method === HEIGHT_METHODS.DIAMETER_FALLBACK) return 'Diameter-based fallback (low confidence)';
+  return 'Unavailable';
+}
+
+function normalizeMethod(m) {
+  if (!m) return null;
+  return m === 'shadow' ? HEIGHT_METHODS.SHADOW : m;
+}
+
+/**
+ * Normalizes one detection. `measurement` is the matching entry of measurements[]
+ * (joined by detection_id); it carries diameter, height, method and confidence.
+ */
+export function normalizeBoulder(raw, measurement = null) {
   if (!raw) return null;
+  const m = measurement || {};
   return {
     id: raw[BACKEND_FIELDS.BOULDER_ID],
     bbox: Array.isArray(raw[BACKEND_FIELDS.BOULDER_BBOX]) ? raw[BACKEND_FIELDS.BOULDER_BBOX] : [0, 0, 0, 0],
     confidence: raw[BACKEND_FIELDS.BOULDER_CONFIDENCE] ?? 0,
-    diameterM: raw[BACKEND_FIELDS.BOULDER_DIAMETER] ?? null,
+    polygon: Array.isArray(raw.polygon) ? raw.polygon : null,
+    diameterM: m.diameter_m ?? raw[BACKEND_FIELDS.BOULDER_DIAMETER] ?? raw.size_m ?? null,
     shadowLengthM: raw[BACKEND_FIELDS.BOULDER_SHADOW_LENGTH] ?? null,
-    heightM: raw[BACKEND_FIELDS.BOULDER_HEIGHT] ?? null,
-    heightMethod: raw[BACKEND_FIELDS.BOULDER_HEIGHT_METHOD] ?? null,
-    heightUncertaintyM: raw[BACKEND_FIELDS.BOULDER_HEIGHT_UNCERTAINTY] ?? null,
+    shadowLengthPx: m.shadow_length_px ?? null,
+    heightM: m.height_m ?? raw[BACKEND_FIELDS.BOULDER_HEIGHT] ?? null,
+    heightMethod: normalizeMethod(m.method ?? raw[BACKEND_FIELDS.BOULDER_HEIGHT_METHOD]),
+    heightUncertaintyM: m.height_uncertainty_m ?? raw[BACKEND_FIELDS.BOULDER_HEIGHT_UNCERTAINTY] ?? null,
+    measurementConfidence: m.confidence ?? null,
+    isHazardous: m.is_hazardous ?? null,
+    measurementWarnings: Array.isArray(m.warnings) ? m.warnings : [],
   };
 }
 
 /**
- * Normalizes a single raw hazard grid cell from the backend.
- *
- * @param {Object} raw
- * @returns {Object|null}
+ * Normalizes one hazard cell. Prefers the real backend names (p_hazard, class, ...)
+ * and falls back to the frontend-compatible aliases the backend also sends.
  */
 export function normalizeCell(raw) {
   if (!raw) return null;
+  const cls = raw.class ?? raw.class_ ?? null;
+  const prob = raw.p_hazard ?? raw[BACKEND_FIELDS.CELL_PROBABILITY] ?? null;
+  const label =
+    (cls && CLASS_TO_LABEL[cls]) || raw[BACKEND_FIELDS.CELL_LABEL] || HAZARD_LABELS.NOT_ASSESSED;
   return {
     row: raw[BACKEND_FIELDS.CELL_ROW],
     col: raw[BACKEND_FIELDS.CELL_COL],
-    probability: raw[BACKEND_FIELDS.CELL_PROBABILITY] ?? null,
+    probability: prob,
     intervalLow: raw[BACKEND_FIELDS.CELL_INTERVAL_LOW] ?? null,
     intervalHigh: raw[BACKEND_FIELDS.CELL_INTERVAL_HIGH] ?? null,
-    label: raw[BACKEND_FIELDS.CELL_LABEL] || HAZARD_LABELS.NOT_ASSESSED,
-    rawCount: raw[BACKEND_FIELDS.CELL_RAW_COUNT] ?? null,
-    correctedCount: raw[BACKEND_FIELDS.CELL_CORRECTED_COUNT] ?? null,
+    label,
+    rawCount:
+      raw.raw_boulder_count ?? raw[BACKEND_FIELDS.CELL_RAW_COUNT] ?? raw.boulder_count ?? null,
+    correctedCount:
+      raw.corrected_boulder_count ?? raw[BACKEND_FIELDS.CELL_CORRECTED_COUNT] ?? null,
+    hazardousCount: raw.hazardous_boulder_count ?? null,
+    // largest_boulder_m is a size (diameter); largest_height_m is a height. Never mix them.
     largestHeightM: raw[BACKEND_FIELDS.CELL_LARGEST_HEIGHT] ?? null,
+    largestBoulderM: raw.largest_boulder_m ?? null,
     slopeDeg: raw[BACKEND_FIELDS.CELL_SLOPE] ?? null,
-    slopeStatus: raw[BACKEND_FIELDS.CELL_SLOPE_STATUS] ?? null,
+    slopeGate: raw.slope_gate ?? null,
+    slopeStatus: raw[BACKEND_FIELDS.CELL_SLOPE_STATUS] ?? raw.slope_gate ?? null,
+    recallCorrected: Boolean(raw.recall_corrected),
+    explanation: raw.explanation || '',
+    reasons: Array.isArray(raw.reasons) ? raw.reasons : [],
+    missingInputs: Array.isArray(raw.missing_inputs) ? raw.missing_inputs : [],
   };
 }
 
 /**
- * Normalizes the full mission result payload.
- *
- * @param {Object} raw
- * @returns {Object}
+ * Normalizes the full /api/analyze (or sampleResult.json) payload.
+ * measurements[] are joined to detections by detection_id.
  */
 export function normalizeResult(raw) {
   if (!raw) {
-    return {
-      image: null,
-      detections: [],
-      hazardCells: [],
-      warnings: [],
-    };
+    return { image: null, detections: [], hazardCells: [], warnings: [], isMock: true };
   }
 
   const rawCells = raw[BACKEND_FIELDS.HAZARD_CELLS] || [];
   const rawDetections = raw[BACKEND_FIELDS.DETECTIONS] || [];
+  const byId = new Map(
+    (Array.isArray(raw.measurements) ? raw.measurements : []).map((m) => [m.detection_id, m])
+  );
 
   return {
     image: raw[BACKEND_FIELDS.IMAGE] || null,
-    detections: Array.isArray(rawDetections) ? rawDetections.map(normalizeBoulder) : [],
+    detections: Array.isArray(rawDetections)
+      ? rawDetections.map((d) => normalizeBoulder(d, byId.get(d[BACKEND_FIELDS.BOULDER_ID])))
+      : [],
     hazardCells: Array.isArray(rawCells) ? rawCells.map(normalizeCell) : [],
     warnings: Array.isArray(raw[BACKEND_FIELDS.WARNINGS]) ? raw[BACKEND_FIELDS.WARNINGS] : [],
+    isMock: raw.is_mock === undefined ? true : Boolean(raw.is_mock),
   };
 }

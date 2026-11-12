@@ -123,6 +123,17 @@ export default function DetectionOverlay({
                   filter={glowRef}
                 />
 
+                {/* Segmentation outline (from the AI module), in original-image pixels */}
+                {Array.isArray(d.polygon) && d.polygon.length >= 3 && (
+                  <polygon
+                    points={d.polygon.map((pt) => `${pt[0]},${pt[1]}`).join(' ')}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={Math.max(1, strokeWidth * 0.6)}
+                    strokeLinejoin="round"
+                  />
+                )}
+
                 {/* Corner crosshairs (4 corners × 2 lines each) */}
                 {[
                   [x1, y1,  1,  0], [x1, y1,  0,  1],

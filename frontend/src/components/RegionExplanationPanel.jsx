@@ -2,9 +2,12 @@ import React from 'react';
 import { useMission } from '../context/useMission';
 import {
   HAZARD_LABELS,
+  HEIGHT_METHODS,
+  describeHeightMethod,
   getLabelColorConfig,
   CANDIDATE_ONLY_NOTE,
 } from '../constants/schema';
+import ResultBadge from './ResultBadge';
 
 /**
  * Format helper adhering strictly to: "Unavailable values are null. NEVER replace null with a made-up number; show 'Unavailable'."
@@ -22,9 +25,21 @@ function displayValue(val, unit = '') {
 }
 
 export default function RegionExplanationPanel() {
-  const { selectedCell, setSelectedCell, hazardCells, imageMeta } = useMission();
+  const {
+    selectedCell,
+    setSelectedCell,
+    hazardCells,
+    detections,
+    imageMeta,
+    hasResult,
+    loading,
+    loadingLabel,
+    apiError,
+    analysisConfig,
+    missingMetadata,
+  } = useMission();
 
-  if (!imageMeta.isSample) {
+  if (!hasResult) {
     return (
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 text-center text-slate-400 flex flex-col items-center justify-center min-h-[300px]">
         <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3">
@@ -34,7 +49,11 @@ export default function RegionExplanationPanel() {
         </div>
         <h4 className="text-slate-200 font-semibold text-sm">Hazard Evaluation Pending</h4>
         <p className="text-xs text-amber-300/90 mt-1 max-w-xs font-mono">
-          Not processed yet. The analysis backend is not connected.
+          {loading
+            ? loadingLabel || 'Working…'
+            : apiError
+              ? `Not processed: ${apiError}`
+              : 'Not processed yet. Upload an image and run the analysis on the Upload page.'}
         </p>
       </div>
     );
@@ -73,6 +92,29 @@ export default function RegionExplanationPanel() {
     }
   };
 
+  // Detections whose centre falls inside the selected cell (approximate, for height method display)
+  const gridRows = Math.max(...hazardCells.map((c) => c.row)) + 1;
+  const gridCols = Math.max(...hazardCells.map((c) => c.col)) + 1;
+  const cellDetections = detections.filter((d) => {
+    if (!d || !imageMeta.width || !imageMeta.height) return false;
+    const cx = (d.bbox[0] + d.bbox[2]) / 2;
+    const cy = (d.bbox[1] + d.bbox[3]) / 2;
+    const r = Math.min(gridRows - 1, Math.floor(cy / (imageMeta.height / gridRows)));
+    const c = Math.min(gridCols - 1, Math.floor(cx / (imageMeta.width / gridCols)));
+    return r === selectedCell.row && c === selectedCell.col;
+  });
+  const withHeight = cellDetections
+    .filter((d) => d.heightM !== null && d.heightM !== undefined)
+    .sort((a, b) => b.heightM - a.heightM);
+  const tallest = withHeight[0] || null;
+  const displayHeight = selectedCell.largestHeightM ?? (tallest ? tallest.heightM : null);
+  const fallbackCount = withHeight.filter((d) => d.heightMethod === HEIGHT_METHODS.DIAMETER_FALLBACK).length;
+
+  const missingInputs = Array.from(
+    new Set([...(selectedCell.missingInputs || []), ...(missingMetadata || [])])
+  );
+  const gateText = { pass: 'Pass', fail: 'Fail', not_assessed: 'Not assessed' };
+
   const config = getLabelColorConfig(selectedCell.label);
   const isNotAssessed = selectedCell.label === HAZARD_LABELS.NOT_ASSESSED || selectedCell.probability === null;
 
@@ -101,9 +143,7 @@ export default function RegionExplanationPanel() {
               Sector [R{selectedCell.row}, C{selectedCell.col}]
             </span>
             <span className="text-slate-400 text-xs">Cell #{currentIndex + 1} of {hazardCells.length}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-              Mock data
-            </span>
+            <ResultBadge />
           </div>
           <h3 className="text-base font-bold text-white">Region Evaluation Details</h3>
         </div>
@@ -184,6 +224,14 @@ export default function RegionExplanationPanel() {
           </div>
         </div>
 
+        {selectedCell.rawCount === 0 && (
+          <p className="text-[11px] text-emerald-300/90 font-mono">
+            Processed: no boulders detected in this region.
+          </p>
+        )}
+        {(selectedCell.rawCount === null || selectedCell.rawCount === undefined) && (
+          <p className="text-[11px] text-amber-300/90 font-mono">Not processed: counts unavailable.</p>
+        )}
         <p className="text-[11px] text-slate-400 leading-snug pt-0.5 italic">
           Corrected for detection recall (adjusts raw detections for estimated model recall rate under lighting and resolution limits).
         </p>
@@ -201,14 +249,29 @@ export default function RegionExplanationPanel() {
           </span>
           <div>
             <span className="text-[11px] text-slate-400 block">Largest Height:</span>
-            {selectedCell.largestHeightM !== null && selectedCell.largestHeightM !== undefined ? (
+            {displayHeight !== null && displayHeight !== undefined ? (
               <span className="font-mono text-slate-100 font-bold text-base">
-                {selectedCell.largestHeightM} m
+                {displayHeight} m
               </span>
             ) : (
               <span className="text-amber-400 italic text-xs font-mono">Height unavailable</span>
             )}
           </div>
+          <div className="text-[11px] font-mono text-slate-400">
+            Method:{' '}
+            <span className="text-slate-200 font-semibold">
+              {tallest ? describeHeightMethod(tallest.heightMethod) : 'Unavailable'}
+            </span>
+          </div>
+          {fallbackCount > 0 && (
+            <div className="text-[11px] font-mono text-amber-300">
+              {fallbackCount} height{fallbackCount > 1 ? 's' : ''} in this region use the diameter-based
+              fallback (low confidence).
+            </div>
+          )}
+          {tallest && tallest.heightUncertaintyM !== null && tallest.heightUncertaintyM !== undefined && (
+            <div className="text-[11px] font-mono text-slate-400">±{tallest.heightUncertaintyM} m</div>
+          )}
         </div>
 
         {/* Slope Section */}
@@ -230,8 +293,51 @@ export default function RegionExplanationPanel() {
             )}
           </div>
           <div className="text-[11px] font-mono text-slate-400">
-            Status: <span className="text-slate-200 font-semibold">{selectedCell.slopeStatus || 'Unavailable'}</span>
+            Slope gate:{' '}
+            <span className="text-slate-200 font-semibold">
+              {gateText[selectedCell.slopeGate] || selectedCell.slopeStatus || 'Unavailable'}
+            </span>
           </div>
+        </div>
+      </div>
+
+      {/* Explanation, reasons, thresholds, missing inputs */}
+      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5 text-xs">
+        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Why this result</span>
+        {selectedCell.explanation ? (
+          <p className="text-slate-300 leading-snug">{selectedCell.explanation}</p>
+        ) : (
+          <p className="text-amber-400 italic font-mono">No explanation provided by the backend.</p>
+        )}
+        {selectedCell.reasons.length > 0 && (
+          <ul className="space-y-1">
+            {selectedCell.reasons.map((r) => (
+              <li key={r} className="font-mono text-[11px] text-slate-400">• {r}</li>
+            ))}
+          </ul>
+        )}
+        <div>
+          <span className="text-[11px] text-slate-400 block mb-0.5">Missing inputs:</span>
+          {missingInputs.length === 0 ? (
+            <span className="font-mono text-[11px] text-emerald-300">None</span>
+          ) : (
+            <span className="font-mono text-[11px] text-amber-300">{missingInputs.join(', ')}</span>
+          )}
+        </div>
+        <div>
+          <span className="text-[11px] text-slate-400 block mb-0.5">Thresholds used (placeholders, not validated):</span>
+          {analysisConfig ? (
+            <ul className="font-mono text-[11px] text-slate-300 space-y-0.5">
+              <li>Footprint diameter: {analysisConfig.lander_footprint_diameter_m} m</li>
+              <li>Hazardous boulder height: {analysisConfig.hazard_height_threshold_m} m</li>
+              <li>Slope gate: {analysisConfig.slope_gate_deg}°</li>
+              <li>
+                Caution at P ≥ {analysisConfig.caution_p_hazard}, Unsafe at P ≥ {analysisConfig.unsafe_p_hazard}
+              </li>
+            </ul>
+          ) : (
+            <span className="font-mono text-[11px] text-amber-400 italic">Unavailable (backend config not loaded)</span>
+          )}
         </div>
       </div>
 
