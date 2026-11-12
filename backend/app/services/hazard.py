@@ -38,6 +38,7 @@ from app.schemas.contracts import (
     Measurement,
     MeasurementMethod,
     RecallFile,
+    ShadowQuality,
 )
 from app.services.classification import classify_cell, explain_cell
 
@@ -216,6 +217,7 @@ def compute_bootstrap_interval(
         m is not None
         and m.method == MeasurementMethod.shadow_geometry
         and m.height_m is not None
+        and getattr(m, "shadow_quality", None) not in (ShadowQuality.poor, "poor")
         for m in cell_measurements
     )
     if not has_shadow:
@@ -252,6 +254,7 @@ def compute_bootstrap_interval(
                 meas is not None
                 and meas.method == MeasurementMethod.shadow_geometry
                 and meas.height_m is not None
+                and getattr(meas, "shadow_quality", None) not in (ShadowQuality.poor, "poor")
             ):
                 mu[j] = meas.height_m
                 sigma[j] = (

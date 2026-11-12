@@ -79,14 +79,27 @@ async def upload_image(
 @router.post("/measure", response_model=MeasurementsFile, tags=["analysis"])
 def measure(req: MeasureRequest, settings: Settings = Depends(get_settings)):
     """measurements.json: diameter (pixel scale) and height (shadow geometry, with labelled fallback)."""
-    return measurement_svc.measure_detections(req.image, req.detections, _config(req.config, settings), req.shadow_lengths_px)
+    return measurement_svc.measure_detections(
+        req.image,
+        req.detections,
+        _config(req.config, settings),
+        req.shadow_lengths_px,
+        shadow_quality=req.shadow_quality,
+        reference_heights_m=req.reference_heights_m,
+    )
 
 
 @router.post("/hazard-grid", response_model=HazardGridFile, tags=["analysis"])
 def hazard_grid(req: HazardGridRequest, settings: Settings = Depends(get_settings)):
     """hazard_grid.json: Poisson footprint probability per cell + separate slope gate."""
     cfg = _config(req.config, settings)
-    meas = measurement_svc.measure_detections(req.image, req.detections, cfg, req.shadow_lengths_px)
+    meas = measurement_svc.measure_detections(
+        req.image,
+        req.detections,
+        cfg,
+        req.shadow_lengths_px,
+        shadow_quality=req.shadow_quality,
+    )
     try:
         grid = hazard_svc.build_hazard_grid(req.image, req.detections, meas.measurements, cfg,
                                             slope_by_cell=req.slope_by_cell, recall=req.recall, is_mock=req.is_mock)
@@ -100,7 +113,13 @@ def hazard_grid(req: HazardGridRequest, settings: Settings = Depends(get_setting
 def analyze(req: HazardGridRequest, settings: Settings = Depends(get_settings)):
     """One call for the frontend: detections (size_m filled where possible) + measurements + hazard cells + warnings."""
     cfg = _config(req.config, settings)
-    meas = measurement_svc.measure_detections(req.image, req.detections, cfg, req.shadow_lengths_px)
+    meas = measurement_svc.measure_detections(
+        req.image,
+        req.detections,
+        cfg,
+        req.shadow_lengths_px,
+        shadow_quality=req.shadow_quality,
+    )
     try:
         grid = hazard_svc.build_hazard_grid(req.image, req.detections, meas.measurements, cfg,
                                             slope_by_cell=req.slope_by_cell, recall=req.recall, is_mock=req.is_mock)
@@ -154,6 +173,8 @@ async def run_pipeline(
     detections_file: Optional[UploadFile] = File(None, description="Detections as uploaded JSON file"),
     shadow_lengths_px: Optional[str] = Form(None, description="Shadow lengths JSON string or upload shadow_lengths_file"),
     shadow_lengths_file: Optional[UploadFile] = File(None, description="Shadow lengths as uploaded JSON file"),
+    shadow_quality: Optional[str] = Form(None, description="Shadow quality JSON string or upload shadow_quality_file"),
+    shadow_quality_file: Optional[UploadFile] = File(None, description="Shadow quality as uploaded JSON file"),
     recall: Optional[str] = Form(None, description="RecallFile as JSON string or upload recall_file"),
     recall_file: Optional[UploadFile] = File(None, description="RecallFile as uploaded JSON file"),
     config: Optional[str] = Form(None, description="AnalysisConfig as JSON string or upload config_file"),
@@ -290,6 +311,36 @@ async def run_pipeline(
                 detail=f"shadow_lengths_px contains unknown detection ID(s): {sorted(list(mismatched))}",
             )
 
+    # 4b. Parse shadow quality
+    shadow_quality_dict: Optional[Dict[int, str]] = None
+    sq_raw = None
+    if shadow_quality is not None and shadow_quality.strip():
+        try:
+            sq_raw = json.loads(shadow_quality)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Invalid JSON in shadow_quality: {e}")
+    elif shadow_quality_file is not None:
+        raw_sq_bytes = await shadow_quality_file.read()
+        if raw_sq_bytes.strip():
+            try:
+                sq_raw = json.loads(raw_sq_bytes.decode("utf-8"))
+            except Exception as e:
+                raise HTTPException(status_code=422, detail=f"Invalid JSON in shadow_quality_file: {e}")
+
+    if sq_raw is not None:
+        if not isinstance(sq_raw, dict):
+            raise HTTPException(
+                status_code=422,
+                detail="shadow_quality must be a dictionary mapping detection IDs to quality strings.",
+            )
+        shadow_quality_dict = {}
+        for k, v in sq_raw.items():
+            try:
+                k_int = int(k)
+                shadow_quality_dict[k_int] = str(v)
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=422, detail=f"Invalid shadow quality entry: {k}: {v}")
+
     # 5. Parse recall
     recall_obj = None
     recall_raw = None
@@ -338,7 +389,9 @@ async def run_pipeline(
                 raise HTTPException(status_code=422, detail=f"Could not read or compute slope from DEM: {e}")
 
     # 7. Measurements
-    meas = measurement_svc.measure_detections(info, detections_list, cfg, shadow_dict)
+    meas = measurement_svc.measure_detections(
+        info, detections_list, cfg, shadow_dict, shadow_quality=shadow_quality_dict
+    )
 
     # 8. Hazard grid & classification
     try:

@@ -45,6 +45,12 @@ class Confidence(str, Enum):
     none = "none"
 
 
+class ShadowQuality(str, Enum):
+    good = "good"
+    fair = "fair"
+    poor = "poor"
+
+
 # ---------------------------------------------------------------------
 # IMAGE INFORMATION
 # ---------------------------------------------------------------------
@@ -142,6 +148,7 @@ class Measurement(BaseModel):
     method: MeasurementMethod = MeasurementMethod.unavailable
     confidence: Confidence = Confidence.none
 
+    shadow_quality: Optional[ShadowQuality] = None
     is_hazardous: Optional[bool] = None
     warnings: List[str] = Field(default_factory=list)
 
@@ -156,6 +163,11 @@ class MeasurementsFile(BaseModel):
     )
 
     warnings: List[str] = Field(default_factory=list)
+
+    height_validated: bool = False
+    reference_count: Optional[int] = None
+    height_mae_m: Optional[float] = None
+    height_bias_m: Optional[float] = None
 
 
 # ---------------------------------------------------------------------
@@ -333,6 +345,13 @@ class AnalysisConfig(BaseModel):
 
     pixel_uncertainty_px: float = Field(
         default=1.0, ge=0
+    )
+
+    sun_elevation_uncertainty_deg: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=90.0,
+        description="PLACEHOLDER / Proposal (unconfirmed): Uncertainty in Sun elevation angle in degrees. Propagated into shadow-based height uncertainty. Default 0.0.",
     )
 
     bootstrap_n: int = Field(

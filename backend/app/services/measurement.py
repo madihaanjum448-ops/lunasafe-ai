@@ -28,6 +28,7 @@ from app.schemas.contracts import (
     Measurement,
     MeasurementMethod,
     MeasurementsFile,
+    ShadowQuality,
 )
 
 
@@ -73,24 +74,27 @@ def height_from_shadow(
     pixel_scale_m: float,
     sun_elevation_deg: float,
     pixel_uncertainty_px: float = 1.0,
+    sun_elevation_uncertainty_deg: float = 0.0,
 ) -> tuple[float, float]:
     """
-    Estimate boulder height using shadow geometry.
+    Estimate boulder height using shadow geometry and propagated uncertainty.
 
     Formula:
         height = shadow_length_m * tan(Sun elevation)
+        sigma_h^2 = (tan(e) * sigma_L)^2 + (L * sec^2(e) * sigma_e_rad)^2
 
     Returns:
         height_m: estimated height in metres
-        uncertainty_m: propagated uncertainty from shadow pixel error
+        uncertainty_m: propagated uncertainty from shadow pixel and sun elevation error
 
-    Does not include uncertainty in Sun elevation or pixel scale.
+    Assumes flat ground; pixel scale uncertainty is not included.
     """
     values = (
         shadow_length_px,
         pixel_scale_m,
         sun_elevation_deg,
         pixel_uncertainty_px,
+        sun_elevation_uncertainty_deg,
     )
 
     if not all(math.isfinite(value) for value in values):
@@ -108,16 +112,24 @@ def height_from_shadow(
     if pixel_uncertainty_px < 0:
         raise ValueError("Pixel uncertainty cannot be negative.")
 
+    if sun_elevation_uncertainty_deg < 0:
+        raise ValueError("Sun elevation uncertainty cannot be negative.")
+
     shadow_length_m = shadow_length_px * pixel_scale_m
     sun_angle_rad = math.radians(sun_elevation_deg)
 
     height_m = shadow_length_m * math.tan(sun_angle_rad)
 
-    uncertainty_m = (
-        pixel_uncertainty_px
-        * pixel_scale_m
-        * math.tan(sun_angle_rad)
-    )
+    sigma_l = pixel_uncertainty_px * pixel_scale_m
+    term_l = math.tan(sun_angle_rad) * sigma_l
+
+    if sun_elevation_uncertainty_deg > 0:
+        sigma_e_rad = math.radians(sun_elevation_uncertainty_deg)
+        sec_e = 1.0 / math.cos(sun_angle_rad)
+        term_e = shadow_length_m * (sec_e ** 2) * sigma_e_rad
+        uncertainty_m = math.sqrt(term_l ** 2 + term_e ** 2)
+    else:
+        uncertainty_m = term_l
 
     return height_m, uncertainty_m
 
@@ -127,6 +139,8 @@ def measure_detections(
     detections: List[Detection],
     config: AnalysisConfig,
     shadow_lengths_px: Optional[Dict[int, float]] = None,
+    shadow_quality: Optional[Dict[int, str]] = None,
+    reference_heights_m: Optional[Dict[int, float]] = None,
 ) -> MeasurementsFile:
     """
     Calculate diameter and height measurements for detected boulders.
@@ -179,9 +193,18 @@ def measure_detections(
 
     if sun is not None:
         file_warnings.append(
-            "Reported uncertainty excludes uncertainty in Sun elevation "
-            "and pixel scale."
+            "Shadow-based height measurement assumes locally flat ground."
         )
+        if config.sun_elevation_uncertainty_deg > 0:
+            file_warnings.append(
+                "Reported uncertainty propagates pixel error and "
+                "Sun-elevation uncertainty, but excludes pixel-scale uncertainty."
+            )
+        else:
+            file_warnings.append(
+                "Reported uncertainty excludes uncertainty in Sun elevation "
+                "and pixel scale."
+            )
 
     sun_is_reliable = (
         sun is not None
@@ -207,6 +230,21 @@ def measure_detections(
 
         warnings: List[str] = []
 
+        # Determine shadow quality
+        quality_str: Optional[str] = None
+        quality_enum: Optional[ShadowQuality] = None
+        if shadow_quality:
+            raw_q = shadow_quality.get(detection.id)
+            if raw_q is not None:
+                q_clean = str(raw_q).strip().lower()
+                if q_clean in ("good", "fair", "poor"):
+                    quality_str = q_clean
+                    quality_enum = ShadowQuality(q_clean)
+                else:
+                    warnings.append(
+                        f"Unrecognized shadow_quality '{raw_q}' for detection {detection.id}; ignored."
+                    )
+
         # Without a valid pixel scale, no physical measurement is possible.
         if scale is None:
             measurements.append(
@@ -214,6 +252,7 @@ def measure_detections(
                     detection_id=detection.id,
                     method=MeasurementMethod.unavailable,
                     confidence=Confidence.none,
+                    shadow_quality=quality_enum,
                     warnings=[
                         "No valid pixel scale; cannot convert pixels "
                         "into metres."
@@ -237,6 +276,7 @@ def measure_detections(
                     detection_id=detection.id,
                     method=MeasurementMethod.unavailable,
                     confidence=Confidence.none,
+                    shadow_quality=quality_enum,
                     warnings=[f"Diameter could not be calculated: {exc}"],
                 )
             )
@@ -266,6 +306,7 @@ def measure_detections(
                 pixel_scale_m=scale,
                 sun_elevation_deg=sun,
                 pixel_uncertainty_px=config.pixel_uncertainty_px,
+                sun_elevation_uncertainty_deg=config.sun_elevation_uncertainty_deg,
             )
 
             method = MeasurementMethod.shadow_geometry
@@ -283,10 +324,26 @@ def measure_detections(
                     "range; shadow-based height has LOW confidence."
                 )
 
-            # Only shadow-based measurements can establish this flag.
-            is_hazardous = (
-                height_m >= config.hazard_height_threshold_m
-            )
+            # Shadow quality adjustments:
+            # "poor" shadow quality: height is not used to establish hazard status
+            # (treat as unknown height, reason recorded, confidence low).
+            # "fair": confidence capped at medium.
+            if quality_str == "poor":
+                confidence = Confidence.low
+                is_hazardous = None
+                warnings.append(
+                    "Shadow quality marked 'poor': height is unconfirmed and excluded from establishing hazard status."
+                )
+            elif quality_str == "fair":
+                if confidence == Confidence.high:
+                    confidence = Confidence.medium
+                is_hazardous = (
+                    height_m >= config.hazard_height_threshold_m
+                )
+            else:
+                is_hazardous = (
+                    height_m >= config.hazard_height_threshold_m
+                )
 
         # -----------------------------------------------------
         # Case 2: Shadow geometry is unavailable
@@ -348,9 +405,45 @@ def measure_detections(
                 ),
                 method=method,
                 confidence=confidence,
+                shadow_quality=quality_enum,
                 is_hazardous=is_hazardous,
                 warnings=warnings,
             )
+        )
+
+    # ---------------------------------------------------------
+    # Validation against reference heights (if provided)
+    # ---------------------------------------------------------
+
+    height_validated = False
+    reference_count: Optional[int] = None
+    height_mae_m: Optional[float] = None
+    height_bias_m: Optional[float] = None
+
+    if reference_heights_m:
+        meas_map = {m.detection_id: m for m in measurements}
+        diffs: List[float] = []
+        for d_id, ref_h in reference_heights_m.items():
+            try:
+                k_int = int(d_id)
+            except (ValueError, TypeError):
+                continue
+            m = meas_map.get(k_int)
+            if m is not None and m.height_m is not None:
+                diffs.append(m.height_m - float(ref_h))
+
+        if diffs:
+            height_validated = True
+            reference_count = len(diffs)
+            height_mae_m = round(sum(abs(d) for d in diffs) / len(diffs), 4)
+            height_bias_m = round(sum(diffs) / len(diffs), 4)
+        else:
+            file_warnings.append(
+                "Heights are unvalidated: reference heights were provided but matched no measured detections."
+            )
+    else:
+        file_warnings.append(
+            "Heights are unvalidated: no reference height set."
         )
 
     # ---------------------------------------------------------
@@ -362,4 +455,8 @@ def measure_detections(
         hazard_height_threshold_m=config.hazard_height_threshold_m,
         measurements=measurements,
         warnings=file_warnings,
+        height_validated=height_validated,
+        reference_count=reference_count,
+        height_mae_m=height_mae_m,
+        height_bias_m=height_bias_m,
     )

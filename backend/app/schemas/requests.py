@@ -80,6 +80,20 @@ class MeasureRequest(BaseModel):
         ),
     )
 
+    shadow_quality: Optional[Dict[int, str]] = Field(
+        default=None,
+        description=(
+            "Mapping of detection ID to shadow quality flag ('good', 'fair', 'poor')."
+        ),
+    )
+
+    reference_heights_m: Optional[Dict[int, float]] = Field(
+        default=None,
+        description=(
+            "Optional reference heights in metres by detection ID for validation."
+        ),
+    )
+
     config: Optional[AnalysisConfig] = Field(
         default=None,
         description=(
@@ -106,6 +120,13 @@ class HazardGridRequest(BaseModel):
         default_factory=dict,
         description=(
             "Mapping of detection ID to shadow length in pixels."
+        ),
+    )
+
+    shadow_quality: Optional[Dict[int, str]] = Field(
+        default=None,
+        description=(
+            "Mapping of detection ID to shadow quality flag ('good', 'fair', 'poor')."
         ),
     )
 
