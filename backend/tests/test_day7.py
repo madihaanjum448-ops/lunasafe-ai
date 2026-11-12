@@ -311,3 +311,85 @@ def test_compare_global_map_script(tmp_path):
     assert rep_r["n_cells_compared"] == 16
 
 
+def test_sensitivity_script_execution_and_monotonicity(tmp_path):
+    from pathlib import Path
+    import subprocess
+    import json
+    import csv
+    import sys
+
+    fixtures_dir = Path("backend/tests/fixtures/known_site")
+    image_path = fixtures_dir / "image.png"
+    mock_dets = fixtures_dir / "detections_mock.json"
+    shadows_path = fixtures_dir / "shadows.json"
+    quality_path = fixtures_dir / "quality.json"
+    dem_path = fixtures_dir / "dem.npy"
+    recall_path = fixtures_dir / "recall.json"
+    out_dir = tmp_path / "sensitivity_out"
+
+    # 1. Refusal on mock data without --allow-mock
+    res_ref = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/sensitivity.py",
+            "--image", str(image_path),
+            "--detections", str(mock_dets),
+            "--pixel-scale", "0.5",
+            "--sun-elevation", "30.0",
+            "--out-dir", str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_ref.returncode == 1
+    assert "Refusing to run sensitivity sweep without --allow-mock" in res_ref.stderr
+
+    # 2. Execution with --allow-mock
+    res_run = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/sensitivity.py",
+            "--image", str(image_path),
+            "--detections", str(mock_dets),
+            "--shadows", str(shadows_path),
+            "--quality", str(quality_path),
+            "--dem", str(dem_path),
+            "--dem-cell-size", "2.5",
+            "--recall", str(recall_path),
+            "--pixel-scale", "0.5",
+            "--sun-elevation", "30.0",
+            "--allow-mock",
+            "--out-dir", str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_run.returncode == 0
+    assert (out_dir / "sensitivity.csv").exists()
+    assert (out_dir / "sensitivity.json").exists()
+
+    # Read CSV results
+    rows = []
+    with open(out_dir / "sensitivity.csv", "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            rows.append(r)
+
+    # 3. Check baseline row exists and class_diff_from_baseline is 0
+    baseline_row = [r for r in rows if r["parameter_varied"] == "baseline"][0]
+    assert int(baseline_row["class_diff_from_baseline"]) == 0
+    assert float(baseline_row["footprint_diameter_m"]) == 10.0
+
+    # 4. Check larger footprint never lowers p_hazard
+    footprint_rows = [
+        r for r in rows if r["parameter_varied"] in ("baseline", "footprint_diameter_m")
+    ]
+    footprint_rows.sort(key=lambda r: float(r["footprint_diameter_m"]))
+    prev_max_p = 0.0
+    for r in footprint_rows:
+        cur_max_p = float(r["max_p_hazard"])
+        assert cur_max_p >= prev_max_p  # Monotonic increase
+        prev_max_p = cur_max_p
+
+
+
