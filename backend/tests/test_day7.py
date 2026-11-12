@@ -159,3 +159,77 @@ def test_reference_heights_validation_metrics():
     expected_bias = round(((h1 - 3.0) + (h2 - 4.0)) / 2.0, 4)
     assert m2.height_mae_m == expected_mae
     assert m2.height_bias_m == expected_bias
+
+
+def test_known_site_runner_mock_refusal_and_execution(tmp_path):
+    from pathlib import Path
+    import subprocess
+    import json
+    import sys
+
+    fixtures_dir = Path("backend/tests/fixtures/known_site")
+    image_path = fixtures_dir / "image.png"
+    mock_dets = fixtures_dir / "detections_mock.json"
+    real_format_dets = fixtures_dir / "detections.json"
+    shadows_path = fixtures_dir / "shadows.json"
+    quality_path = fixtures_dir / "quality.json"
+    dem_path = fixtures_dir / "dem.npy"
+    recall_path = fixtures_dir / "recall.json"
+
+    # 1. Refusal on mock data without --allow-mock
+    res_refusal = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/run_known_site.py",
+            "--image", str(image_path),
+            "--detections", str(mock_dets),
+            "--pixel-scale", "0.5",
+            "--sun-elevation", "30.0",
+            "--out", str(tmp_path / "out_refusal"),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_refusal.returncode == 1
+    assert "Refusing to run without explicit --allow-mock" in res_refusal.stderr
+
+    # 2. Execution with --allow-mock
+    out_dir = tmp_path / "out_allowed"
+    res_allowed = subprocess.run(
+        [
+            sys.executable,
+            "backend/scripts/run_known_site.py",
+            "--image", str(image_path),
+            "--detections", str(mock_dets),
+            "--shadows", str(shadows_path),
+            "--quality", str(quality_path),
+            "--dem", str(dem_path),
+            "--dem-cell-size", "2.5",
+            "--recall", str(recall_path),
+            "--pixel-scale", "0.5",
+            "--sun-elevation", "30.0",
+            "--allow-mock",
+            "--out", str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res_allowed.returncode == 0
+    assert (out_dir / "measurements.json").exists()
+    assert (out_dir / "hazard_grid.json").exists()
+    assert (out_dir / "summary.json").exists()
+    assert (out_dir / "run_manifest.json").exists()
+
+    with open(out_dir / "run_manifest.json") as f:
+        manifest = json.load(f)
+    assert manifest["is_mock"] is True
+    assert "image" in manifest["input_files_sha256"]
+    assert "git_commit_hash" in manifest
+    assert len(manifest["unconfirmed_placeholders"]) > 0
+
+    with open(out_dir / "summary.json") as f:
+        summary = json.load(f)
+    assert summary["is_mock"] is True
+    assert summary["slope_availability"]["assessed"] is True
+    assert summary["detections_summary"]["total_detections"] == 3
+
