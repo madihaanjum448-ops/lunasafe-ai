@@ -193,3 +193,41 @@ documented.
 
 Test-set independence and some historical evaluation settings remain
 unverified and must be disclosed in project reporting.
+
+## Shadow measurement and physical-height assessment
+
+### Observation geometry
+
+- LROC product: M174800267RE
+- Paired CDR product: M174800267RC
+- Orbit: 10894
+- Incidence angle: 56.68 degrees
+- Sub-solar azimuth: 131.85 degrees
+- North azimuth: 272.4 degrees
+- Scaled pixel width: 0.26 m/pixel
+- Scaled pixel height: 0.56 m/pixel
+- Image orientation: Case 3 (ascending node, +X flight direction)
+
+### Independent-image review
+
+- LROC inference was performed on an independent image.
+- Detection confidence values are not ground-truth accuracy measurements.
+- Manual review did not establish verified boulder-shadow associations.
+- Detection 35 was inspected using a higher-resolution CDR neighbourhood crop. A distinct, continuous boulder-associated shadow could not be confirmed.
+- Seven preliminary shadow-review records are maintained in shadow_manual_review.csv.
+
+### Measurement limitation
+
+Shadow extraction remains experimental. The current evidence does not support validated shadow lengths or physical boulder heights for this LROC image.
+
+No physical height is reported from an unverified shadow candidate. Shadow length and physical height must remain unavailable when a reliable shadow boundary cannot be established.
+
+The observation geometry is recorded in observation_geometry.json. The calculated shadow direction is provisional and must not be treated as a validated measurement direction until image-coordinate mapping is independently confirmed.
+
+### Evaluation status
+
+- Boulder detection: evaluated using the recorded test metrics.
+- Independent-image detection: exploratory; no verified ground truth.
+- Shadow candidate extraction: experimental.
+- Shadow length: not validated.
+- Physical height: not validated.
