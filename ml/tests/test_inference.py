@@ -252,3 +252,74 @@ def test_invalid_sun_elevation_raises_error(
             image_path,
             sun_elevation_deg=sun_elevation,
         )
+
+
+def test_predict_tiled_splits_image_and_translates_coordinates(
+    tmp_path, monkeypatch
+):
+    checkpoint = tmp_path / "model.pt"
+    checkpoint.touch()
+
+    image_path = tmp_path / "large_sample.png"
+    create_image(image_path)
+
+    mock_yolo(monkeypatch)
+    detector = inference.LunaSafeInference(model_path=checkpoint)
+
+    result = detector.predict_tiled(
+        image_path,
+        tile_size=64,
+        overlap=0.25,
+    )
+
+    assert result["image"]["width"] == 120
+    assert result["image"]["height"] == 100
+    assert result["model_name"] == "YOLOv8n-seg"
+    assert result["is_mock"] is False
+
+    # Six tiles are expected for a 120x100 image with these settings.
+    assert len(result["detections"]) == 6
+
+    first = result["detections"][0]
+    assert first["bbox"] == [10.0, 20.0, 40.0, 60.0]
+    assert len(first["polygon"]) == 4
+
+    # A detection from the next horizontal tile must be offset.
+    assert any(
+        detection["bbox"][0] > 10.0
+        for detection in result["detections"]
+    )
+
+
+@pytest.mark.parametrize("tile_size", [0, -1, 64.5, True])
+def test_predict_tiled_rejects_invalid_tile_size(
+    tmp_path, monkeypatch, tile_size
+):
+    checkpoint = tmp_path / "model.pt"
+    checkpoint.touch()
+    mock_yolo(monkeypatch)
+
+    detector = inference.LunaSafeInference(model_path=checkpoint)
+
+    with pytest.raises(ValueError, match="Tile size"):
+        detector.predict_tiled(
+            tmp_path / "sample.png",
+            tile_size=tile_size,
+        )
+
+
+@pytest.mark.parametrize("overlap", [-0.1, 1.0, 1.1])
+def test_predict_tiled_rejects_invalid_overlap(
+    tmp_path, monkeypatch, overlap
+):
+    checkpoint = tmp_path / "model.pt"
+    checkpoint.touch()
+    mock_yolo(monkeypatch)
+
+    detector = inference.LunaSafeInference(model_path=checkpoint)
+
+    with pytest.raises(ValueError, match="Overlap"):
+        detector.predict_tiled(
+            tmp_path / "sample.png",
+            overlap=overlap,
+        )
