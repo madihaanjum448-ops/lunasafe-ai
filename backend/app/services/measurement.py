@@ -20,6 +20,7 @@ Assumptions and limitations:
 from fastapi import HTTPException
 
 from typing import Dict, List, Optional
+import math
 
 from app.schemas.contracts import (
     AnalysisConfig,
@@ -166,7 +167,17 @@ def measure_detections(
             detail=f"Duplicate detection id found: {dup}",
         )
     # ----------------------------------------------
-    # ---- NEW: enforce integer shadow_lengths_px keys ----
+    # ---- NEW: enforce presence of shadow length for each detection ----
+    if shadow_lengths_px:
+        missing_ids = [d.id for d in detections if d.id not in shadow_lengths_px]
+        if missing_ids:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Missing shadow length for detection id(s): {missing_ids}",
+            )
+    shadow_lengths_px = shadow_lengths_px or {}
+
+
     if any(not isinstance(k, int) for k in shadow_lengths_px.keys()):
         raise HTTPException(
             status_code=422,
@@ -182,9 +193,11 @@ def measure_detections(
     scale = image.pixel_scale_m
     sun = image.sun_elevation_deg
 
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
     # Validate image metadata
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
 
     if scale is None:
         file_warnings.append(
@@ -240,9 +253,11 @@ def measure_detections(
             "Shadow-based heights will have LOW confidence."
         )
 
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
     # Process each detected boulder
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
 
     for detection in detections:
 
@@ -279,9 +294,11 @@ def measure_detections(
             )
             continue
 
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
         # Calculate diameter
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
 
         try:
             diameter_m, diameter_uncertainty_m = diameter_from_bbox(
@@ -300,9 +317,11 @@ def measure_detections(
             )
             continue
 
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
         # Retrieve shadow measurement
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
 
         shadow_px = shadow_lengths_px.get(detection.id)
 
@@ -313,9 +332,11 @@ def measure_detections(
             and shadow_px > 0
         )
 
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
         # Case 1: Shadow geometry is available
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
 
         if valid_shadow and sun is not None:
 
@@ -363,9 +384,11 @@ def measure_detections(
                     height_m >= config.hazard_height_threshold_m
                 )
 
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
         # Case 2: Shadow geometry is unavailable
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
 
         else:
 
@@ -401,9 +424,11 @@ def measure_detections(
             # Do not turn an assumed height into a confirmed hazard flag.
             is_hazardous = None
 
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
         # Store result
-        # -----------------------------------------------------
+        shadow_lengths_px = shadow_lengths_px or {}
+-----
 
         measurements.append(
             Measurement(
@@ -429,9 +454,11 @@ def measure_detections(
             )
         )
 
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
     # Validation against reference heights (if provided)
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
 
     height_validated = False
     reference_count: Optional[int] = None
@@ -464,9 +491,11 @@ def measure_detections(
             "Heights are unvalidated: no reference height set."
         )
 
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
     # Return complete measurement response
-    # ---------------------------------------------------------
+    shadow_lengths_px = shadow_lengths_px or {}
+---------
 
     return MeasurementsFile(
         image=image,

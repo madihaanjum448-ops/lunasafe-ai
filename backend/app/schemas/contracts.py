@@ -87,6 +87,7 @@ class Detection(BaseModel):
 
     size_m: Optional[float] = Field(default=None, gt=0)
     class_name: str = "boulder"
+    polygon: Optional[List[List[float]]] = None  # Pixel-coordinate polygon vertices
 
 
 class DetectionsFile(BaseModel):

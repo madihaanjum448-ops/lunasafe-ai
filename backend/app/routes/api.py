@@ -22,6 +22,7 @@ from app.schemas.requests import (
     UploadResponse,
 )
 from app.services import hazard as hazard_svc
+from app.services import inference as inference_svc
 from app.services import measurement as measurement_svc
 from app.services import metadata as metadata_svc
 from app.services import slope as slope_svc
