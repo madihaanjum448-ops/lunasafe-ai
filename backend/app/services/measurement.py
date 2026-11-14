@@ -17,7 +17,8 @@ Assumptions and limitations:
 - A fallback height is NOT treated as a confirmed hazard measurement.
 """
 
-import math
+from fastapi import HTTPException
+
 from typing import Dict, List, Optional
 
 from app.schemas.contracts import (
@@ -156,7 +157,24 @@ def measure_detections(
         or non-hazardous. The hazard engine must preserve this distinction.
     """
 
-    shadow_lengths_px = shadow_lengths_px or {}
+    # ---- NEW: duplicate detection ID validation ----
+    ids = [d.id for d in detections]
+    if len(set(ids)) != len(ids):
+        dup = next(i for i in ids if ids.count(i) > 1)
+        raise HTTPException(
+            status_code=422,
+            detail=f"Duplicate detection id found: {dup}",
+        )
+    # ----------------------------------------------
+    # ---- NEW: enforce integer shadow_lengths_px keys ----
+    if any(not isinstance(k, int) for k in shadow_lengths_px.keys()):
+        raise HTTPException(
+            status_code=422,
+            detail="shadow_lengths_px keys must be integers (detection IDs)",
+        )
+    # ----------------------------------------------
+    # Continue with existing logic
+    
 
     file_warnings: List[str] = []
     measurements: List[Measurement] = []
