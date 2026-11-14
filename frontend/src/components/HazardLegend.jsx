@@ -33,6 +33,19 @@ export default function HazardLegend() {
   const unsafeCount = hazardCells.filter((c) => c.label === HAZARD_LABELS.UNSAFE_CANDIDATE).length;
   const notAssessedCount = hazardCells.filter((c) => c.label === HAZARD_LABELS.NOT_ASSESSED).length;
 
+  const gridSize = (() => {
+    if (!hazardCells || hazardCells.length === 0) return '0-cell';
+    const rows = hazardCells.reduce((max, c) => (typeof c.row === 'number' ? Math.max(max, c.row) : max), -1) + 1;
+    const cols = hazardCells.reduce((max, c) => (typeof c.col === 'number' ? Math.max(max, c.col) : max), -1) + 1;
+    if (rows > 0 && cols > 0 && rows * cols === hazardCells.length) {
+      return `${rows}×${cols}`;
+    }
+    if (rows > 0 && cols > 0) {
+      return `${rows}×${cols}`;
+    }
+    return `${hazardCells.length}-cell`;
+  })();
+
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 backdrop-blur-sm shadow-xl space-y-4">
       {/* Header with Title and Visible Mock Data Badge */}
@@ -56,7 +69,7 @@ export default function HazardLegend() {
             onChange={(e) => setShowHeatmap(e.target.checked)}
             className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50 accent-cyan-500"
           />
-          <span>Show Hazard Heatmap Layer (8×8 Grid)</span>
+          <span>Show Hazard Heatmap Layer ({gridSize} Grid)</span>
         </label>
 
         <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-slate-400 hover:text-slate-200">

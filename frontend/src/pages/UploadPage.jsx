@@ -7,7 +7,7 @@ import {
   MAX_IMAGE_HEIGHT,
   MAX_FILE_SIZE_MB,
 } from '../constants/upload';
-import { getMetadataWarnings } from '../constants/metadata';
+import { getMetadataWarnings, METADATA_WARNINGS } from '../constants/metadata';
 import { MetadataSummaryCard, MetadataWarningsCard } from '../components/MetadataCards';
 import ResultBadge from '../components/ResultBadge';
 import ThresholdControls from '../components/ThresholdControls';
@@ -37,7 +37,9 @@ export default function UploadPage() {
     applyManualMetadata,
     runAnalysis,
     loadOfflineDemo,
+    loadCaseStudy,
     loadResultFile,
+    resultLabel,
   } = useMission();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -50,6 +52,21 @@ export default function UploadPage() {
 
   // Derived metadata warnings – computed from imageMeta on each render
   const metaWarnings = getMetadataWarnings(imageMeta);
+
+  const metadataNote = (() => {
+    if (!hasResult) {
+      return !imageMeta.isSample ? METADATA_WARNINGS.BACKEND_NOTE : null;
+    }
+    if (resultLabel) {
+      return resultLabel.toLowerCase().startsWith('from')
+        ? resultLabel
+        : `From the ${resultLabel.toLowerCase()}`;
+    }
+    if (isMock) {
+      return 'From demo data';
+    }
+    return 'From the backend result';
+  })();
 
   const onDetectionsFile = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -285,12 +302,15 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={runAnalysis}
-                disabled={loading}
+                disabled={loading || !!apiError || !!uploadError}
                 className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {loading && <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                 {pendingDetections ? 'Run analysis on loaded detections' : 'Run analysis (demo detections)'}
               </button>
+              {(apiError || uploadError) && (
+                <span className="text-xs text-red-400 self-center">{apiError || uploadError}</span>
+              )}
               <button
                 type="button"
                 onClick={() => detectionsInputRef.current?.click()}
@@ -333,6 +353,13 @@ export default function UploadPage() {
               </button>
               <button
                 type="button"
+                onClick={loadCaseStudy}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium"
+              >
+                Load known-site case study
+              </button>
+              <button
+                type="button"
                 onClick={() => resultInputRef.current?.click()}
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium"
               >
@@ -341,7 +368,7 @@ export default function UploadPage() {
               <input ref={resultInputRef} type="file" accept=".json,application/json" onChange={onResultFile} className="hidden" />
             </div>
             <p className="text-[11px] text-slate-400 leading-snug">
-              The offline demo is pre-computed mock data. For the case study, upload the site image first, then load its saved /api/analyze response.
+              The offline demo is pre-computed mock data. The known-site case study loads a saved result directly on its image without contacting the backend.
             </p>
           </div>
 
@@ -505,7 +532,7 @@ export default function UploadPage() {
                       {detections.length} obstacles
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          (Demo data)
+                          ({resultLabel || 'Demo data'})
                         </span>
                       )}
                     </>
@@ -522,7 +549,7 @@ export default function UploadPage() {
                       {hazardCells.length} cells
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          (Demo data)
+                          ({resultLabel || 'Demo data'})
                         </span>
                       )}
                     </>
@@ -534,7 +561,7 @@ export default function UploadPage() {
             </div>
 
             {/* Metadata Summary Card */}
-            <MetadataSummaryCard imageMeta={imageMeta} />
+            <MetadataSummaryCard imageMeta={imageMeta} note={metadataNote} />
 
             {/* Metadata Warnings Card */}
             <MetadataWarningsCard metaWarnings={metaWarnings} />

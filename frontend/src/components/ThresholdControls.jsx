@@ -12,7 +12,7 @@ const FIELDS = [
  * Empty = backend default. These are placeholders, not validated landing limits.
  */
 export default function ThresholdControls({ showRun = false }) {
-  const { thresholds, setThreshold, resetThresholds, analysisConfig, runAnalysis, loading, resultSource } =
+  const { thresholds, setThreshold, resetThresholds, analysisConfig, runAnalysis, loading, resultSource, staleResult } =
     useMission();
 
   const canRerun = showRun && resultSource !== 'precomputed';
@@ -54,9 +54,17 @@ export default function ThresholdControls({ showRun = false }) {
           type="button"
           onClick={runAnalysis}
           disabled={loading || !canRerun}
-          className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium disabled:opacity-40"
+          className={`px-4 py-2 rounded-lg font-medium disabled:opacity-40 ${
+            canRerun && staleResult
+              ? 'bg-amber-500 hover:bg-amber-400 text-black ring-2 ring-amber-400 animate-pulse'
+              : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+          }`}
         >
-          {canRerun ? 'Re-run analysis with these thresholds' : 'Re-run unavailable for saved results'}
+          {canRerun
+            ? staleResult
+              ? '⚠ Re-run analysis — results are stale'
+              : 'Re-run analysis with these thresholds'
+            : 'Re-run unavailable for saved results'}
         </button>
       )}
     </div>

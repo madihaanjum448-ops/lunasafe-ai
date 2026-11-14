@@ -6,6 +6,7 @@ import ConfidenceSlider from '../components/ConfidenceSlider';
 import WarningsBanner from '../components/WarningsBanner';
 import { useMission } from '../context/useMission';
 import { BAND_STYLES, CONFIDENCE_HIGH_MIN, CONFIDENCE_MED_MIN } from '../constants/detections';
+import { describeHeightMethod } from '../constants/schema';
 
 /* ─────────────────────────────────────────────────────────────────
    LayersPanel
@@ -108,6 +109,7 @@ export default function DetectionsPage() {
     isMock,
     loading,
     apiError,
+    resultLabel,
   } = useMission();
 
   const [selectedDetection, setSelectedDetection] = useState(null);
@@ -129,7 +131,7 @@ export default function DetectionsPage() {
               Obstacle Detection Module
             </span>
             <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-              {hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload'}
+              {resultLabel || (hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload')}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -311,7 +313,9 @@ export default function DetectionsPage() {
                   <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
                     <span className="text-slate-400">Height Method:</span>
                     {selectedDetection.heightMethod ? (
-                      <span className="font-mono text-cyan-300">{selectedDetection.heightMethod}</span>
+                      <span className="font-mono text-cyan-300">
+                        {describeHeightMethod(selectedDetection.heightMethod)}
+                      </span>
                     ) : (
                       <span className="font-mono italic text-amber-400">Unavailable</span>
                     )}
