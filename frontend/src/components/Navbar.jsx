@@ -8,7 +8,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinkClass = ({ isActive }) =>
-    `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 ${
+    `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
       isActive
         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10'
         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
@@ -17,11 +17,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 flex-nowrap gap-4">
           {/* Brand Logo & Title */}
-          <div className="flex items-center gap-3">
-            <NavLink to="/" className="flex items-center gap-3 group">
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-violet-500 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-950/50 group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <NavLink to="/" className="flex items-center gap-3 group flex-shrink-0">
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-violet-500 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-950/50 group-hover:scale-105 transition-transform flex-shrink-0">
                 <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
                   {/* Moon icon with safety crosshair */}
                   <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -32,13 +32,13 @@ export default function Navbar() {
                 </div>
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-lg font-bold tracking-tight text-white group-hover:text-cyan-300 transition-colors whitespace-nowrap">
                     LunaSafe <span className="text-cyan-400">AI</span>
                   </span>
-                  <ResultBadge />
+                  <ResultBadge short className="whitespace-nowrap" />
                 </div>
-                <p className="text-[11px] text-slate-400 leading-none hidden sm:block">
+                <p className="text-[11px] text-slate-400 leading-none hidden sm:block whitespace-nowrap">
                   Lunar Landing-Site Safety Assessment
                 </p>
               </div>
@@ -46,23 +46,23 @@ export default function Navbar() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-2 flex-nowrap flex-shrink-0">
             <NavLink to="/" className={navLinkClass} end>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               Upload & Setup
             </NavLink>
 
             <NavLink to="/detections" className={navLinkClass}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m-3-3h6" />
               </svg>
               Boulder Detections
             </NavLink>
 
             <NavLink to="/hazard-map" className={navLinkClass}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
               Hazard Map
@@ -70,8 +70,8 @@ export default function Navbar() {
           </nav>
 
           {/* Telemetry info pill */}
-          <div className="hidden lg:flex items-center gap-3 text-xs">
-            <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+          <div className="hidden xl:flex items-center gap-3 text-xs flex-shrink-0 whitespace-nowrap">
+            <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2 whitespace-nowrap">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span className="text-slate-400">Target:</span>
               <span className="text-slate-200 font-mono font-medium">{imageMeta.id}</span>
@@ -81,10 +81,10 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Scale:</span>
               {imageMeta.pixelScaleM !== null ? (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 whitespace-nowrap">
                   <span className="text-cyan-300 font-mono font-medium">
                     {imageMeta.pixelScaleM} m/px
                   </span>
@@ -146,7 +146,7 @@ export default function Navbar() {
             <span>
               Scale: {imageMeta.pixelScaleM ? `${imageMeta.pixelScaleM} m/px ${imageMeta.isSample ? '(Mock value)' : ''}` : 'Unavailable'}
             </span>
-            <ResultBadge />
+            <ResultBadge short className="whitespace-nowrap" />
           </div>
         </div>
       )}

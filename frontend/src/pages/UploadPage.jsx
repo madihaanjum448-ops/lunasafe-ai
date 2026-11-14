@@ -7,7 +7,7 @@ import {
   MAX_IMAGE_HEIGHT,
   MAX_FILE_SIZE_MB,
 } from '../constants/upload';
-import { getMetadataWarnings } from '../constants/metadata';
+import { getMetadataWarnings, METADATA_WARNINGS } from '../constants/metadata';
 import { MetadataSummaryCard, MetadataWarningsCard } from '../components/MetadataCards';
 import ResultBadge from '../components/ResultBadge';
 import ThresholdControls from '../components/ThresholdControls';
@@ -52,6 +52,21 @@ export default function UploadPage() {
 
   // Derived metadata warnings – computed from imageMeta on each render
   const metaWarnings = getMetadataWarnings(imageMeta);
+
+  const metadataNote = (() => {
+    if (!hasResult) {
+      return !imageMeta.isSample ? METADATA_WARNINGS.BACKEND_NOTE : null;
+    }
+    if (resultLabel) {
+      return resultLabel.toLowerCase().startsWith('from')
+        ? resultLabel
+        : `From the ${resultLabel.toLowerCase()}`;
+    }
+    if (isMock) {
+      return 'From demo data';
+    }
+    return 'From the backend result';
+  })();
 
   const onDetectionsFile = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -287,12 +302,15 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={runAnalysis}
-                disabled={loading}
+                disabled={loading || !!apiError || !!uploadError}
                 className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {loading && <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                 {pendingDetections ? 'Run analysis on loaded detections' : 'Run analysis (demo detections)'}
               </button>
+              {(apiError || uploadError) && (
+                <span className="text-xs text-red-400 self-center">{apiError || uploadError}</span>
+              )}
               <button
                 type="button"
                 onClick={() => detectionsInputRef.current?.click()}
@@ -543,7 +561,7 @@ export default function UploadPage() {
             </div>
 
             {/* Metadata Summary Card */}
-            <MetadataSummaryCard imageMeta={imageMeta} />
+            <MetadataSummaryCard imageMeta={imageMeta} note={metadataNote} />
 
             {/* Metadata Warnings Card */}
             <MetadataWarningsCard metaWarnings={metaWarnings} />

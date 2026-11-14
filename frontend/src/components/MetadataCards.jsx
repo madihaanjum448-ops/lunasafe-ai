@@ -64,7 +64,11 @@ function MetaRow({ label, value, unit = '', isSample, last = false }) {
  * @param {Object}  props
  * @param {Object}  props.imageMeta - The active image metadata from MissionContext
  */
-export function MetadataSummaryCard({ imageMeta }) {
+export function MetadataSummaryCard({ imageMeta, note }) {
+  const displayNote = note !== undefined
+    ? note
+    : (!imageMeta.isSample ? METADATA_WARNINGS.BACKEND_NOTE : null);
+
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-1">
       {/* Card header */}
@@ -73,9 +77,9 @@ export function MetadataSummaryCard({ imageMeta }) {
           <span className="w-2 h-2 rounded-full bg-violet-400" />
           Metadata Summary
         </h3>
-        {!imageMeta.isSample && (
+        {displayNote && (
           <span className="text-[11px] text-slate-400 italic">
-            {METADATA_WARNINGS.BACKEND_NOTE}
+            {displayNote}
           </span>
         )}
       </div>

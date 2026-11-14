@@ -9,7 +9,32 @@ import ThresholdControls from '../components/ThresholdControls';
 import { useMission } from '../context/useMission';
 
 export default function HazardMapPage() {
-  const { showHeatmap, showDetectionsInHazardMap, selectedCell, loadSampleData, hasResult, isMock, loading, apiError, resultLabel } = useMission();
+  const {
+    showHeatmap,
+    showDetectionsInHazardMap,
+    selectedCell,
+    loadSampleData,
+    hasResult,
+    isMock,
+    loading,
+    apiError,
+    resultLabel,
+    staleResult,
+    hazardCells,
+  } = useMission();
+
+  const gridSize = (() => {
+    if (!hazardCells || hazardCells.length === 0) return '0-cell';
+    const rows = hazardCells.reduce((max, c) => (typeof c.row === 'number' ? Math.max(max, c.row) : max), -1) + 1;
+    const cols = hazardCells.reduce((max, c) => (typeof c.col === 'number' ? Math.max(max, c.col) : max), -1) + 1;
+    if (rows > 0 && cols > 0 && rows * cols === hazardCells.length) {
+      return `${rows}×${cols}`;
+    }
+    if (rows > 0 && cols > 0) {
+      return `${rows}×${cols}`;
+    }
+    return `${hazardCells.length}-cell`;
+  })();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -29,7 +54,7 @@ export default function HazardMapPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
             {hasResult
-              ? '8×8 candidate evaluation grid categorized into Safe candidate (green), Caution (yellow), Unsafe candidate (red), and Not assessed (grey). Candidate regions only. This is not a landing safety certification.'
+              ? `${gridSize} candidate evaluation grid categorized into Safe candidate (green), Caution (yellow), Unsafe candidate (red), and Not assessed (grey). Candidate regions only. This is not a landing safety certification.`
               : 'Pan and zoom across your uploaded lunar image.'}
           </p>
         </div>
@@ -77,6 +102,16 @@ export default function HazardMapPage() {
         </div>
       )}
 
+      {/* Stale-result banner */}
+      {hasResult && staleResult && (
+        <div className="p-4 rounded-xl bg-yellow-950/40 border border-yellow-500/50 text-yellow-200 text-sm flex items-center gap-3 shadow-lg">
+          <svg className="w-5 h-5 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="font-semibold">Result is out of date. Re‑run analysis.</span>
+        </div>
+      )}
+
       {/* Descent Warnings if present on sample */}
       {hasResult && <WarningsBanner />}
 
@@ -111,7 +146,11 @@ export default function HazardMapPage() {
             }
           >
             {/* Heatmap 8x8 Grid SVG Layer (only rendered on sample data) */}
-            {hasResult && <HazardGridOverlay />}
+            {hasResult && (
+              <div className={staleResult ? 'opacity-30' : ''}>
+                <HazardGridOverlay />
+              </div>
+            )}
 
             {/* Optional Boulder Detections Layer on top (only on sample data) */}
             {hasResult && showDetectionsInHazardMap && <DetectionOverlay />}

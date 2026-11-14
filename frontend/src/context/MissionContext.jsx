@@ -70,6 +70,7 @@ export function MissionProvider({ children }) {
   const [thresholds, setThresholds] = useState({});
   const [resultSource, setResultSource] = useState('sample'); // 'sample' | 'backend' | 'precomputed'
   const [resultLabel, setResultLabel] = useState(null);
+  const [staleResult, setStaleResult] = useState(false);
   const uploadedFileRef = useRef(null);
   const uploadSeq = useRef(0);
 
@@ -149,9 +150,14 @@ export function MissionProvider({ children }) {
     }
   };
 
-  const setThreshold = (key, value) =>
+  const setThreshold = (key, value) => {
     setThresholds((prev) => ({ ...prev, [key]: value === '' ? null : value }));
-  const resetThresholds = () => setThresholds({});
+    if (hasResult) setStaleResult(true);
+  };
+  const resetThresholds = () => {
+    setThresholds({});
+    setStaleResult(false);
+  };
 
   const thresholdOverrides = () =>
     Object.fromEntries(
@@ -203,6 +209,7 @@ export function MissionProvider({ children }) {
     setLoading(false);
     setResultLabel(null);
     applyPrecomputed(sampleAnalyzeResponse, { useSampleImage: true });
+    setStaleResult(false);
     setUploadSuccess('Offline demo loaded (pre-computed, is_mock: true). No backend needed.');
   };
 
@@ -271,6 +278,7 @@ export function MissionProvider({ children }) {
 
       applyPrecomputed(rawWithRealDims, { useSampleImage: false });
       setResultLabel('Pre-computed case study');
+      setStaleResult(false);
       setPendingDetections(null);
       uploadedFileRef.current = null;
       setUploadSuccess('Pre-computed case study loaded (no backend call).');
@@ -350,6 +358,7 @@ export function MissionProvider({ children }) {
       setIsMock(n.isMock);
       setHasResult(true);
       setResultSource('backend');
+      setStaleResult(false);
       setSelectedCell(null);
     } catch (err) {
       setApiError(err.message);
@@ -493,6 +502,7 @@ export function MissionProvider({ children }) {
       setHasResult(false);
       setIsMock(false);
       setResultSource('backend');
+      setStaleResult(true);
       setResultLabel(null);
       setBackendImage(null);
       setMissingMetadata([]);
@@ -559,6 +569,7 @@ export function MissionProvider({ children }) {
         setThreshold,
         resetThresholds,
         resultSource,
+        staleResult,
         resultLabel,
         loadOfflineDemo,
         loadCaseStudy,

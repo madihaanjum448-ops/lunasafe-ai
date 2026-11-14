@@ -4,7 +4,7 @@ import { useMission } from '../context/useMission';
 /**
  * Shows whether the data on screen is demo data (is_mock: true) or a real AI result (is_mock: false).
  */
-export default function ResultBadge({ className = '' }) {
+export default function ResultBadge({ className = '', short = false }) {
   const { hasResult, isMock, loading, resultLabel } = useMission();
 
   let text = 'No analysis yet';
@@ -25,11 +25,23 @@ export default function ResultBadge({ className = '' }) {
     tone = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
   }
 
+  const fullLabel = text;
+  let displayText = text;
+
+  if (short) {
+    if (resultLabel?.toLowerCase().includes('case study') || resultLabel === 'Pre-computed case study') {
+      displayText = 'Case study (mock)';
+    } else if (hasResult && isMock) {
+      displayText = 'Demo data (mock)';
+    }
+  }
+
   return (
     <span
-      className={`text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded border ${tone} ${className}`}
+      title={fullLabel}
+      className={`text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded border whitespace-nowrap ${tone} ${className}`}
     >
-      {text}
+      {displayText}
     </span>
   );
 }
