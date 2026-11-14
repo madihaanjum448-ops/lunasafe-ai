@@ -130,8 +130,8 @@ export default function DetectionsPage() {
             <span className="text-xs uppercase tracking-widest text-cyan-400 font-mono font-semibold">
               Obstacle Detection Module
             </span>
-            <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-              {resultLabel || (hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload')}
+            <span className={`text-xs px-2 py-0.5 rounded font-mono border ${isMock ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'}`}>
+              {resultLabel || 'User Upload'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">

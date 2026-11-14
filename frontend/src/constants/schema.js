@@ -212,15 +212,71 @@ export function normalizeBoulder(raw, measurement = null) {
 }
 
 /**
+ * Approved provenance labels. Exactly one of these four must be shown whenever
+ * result provenance is displayed.
+ */
+export const PROVENANCE_LABELS = {
+  OFFLINE_DEMO: 'Offline demo',
+  EXTERNAL_DETECTIONS: 'External detections',
+  MODEL_INFERENCE: 'Model inference',
+  VALIDATED_SITE: 'Validated site',
+};
+
+/**
+ * Returns exactly one of the four approved provenance labels:
+ * - "Offline demo": the built-in demo detections, the offline demo, or a pre-computed result with is_mock true.
+ * - "External detections": a result made from a loaded detections JSON file.
+ * - "Model inference": only if the result JSON has provenance equal to "model_inference". Never show it otherwise.
+ * - "Validated site": only if the result JSON has provenance equal to "validated_site". Never show it otherwise.
+ * Default to "Offline demo" when is_mock is true or when provenance is missing.
+ */
+export function getProvenanceLabel({ isMock, provenance, isExternalDetections }) {
+  if (isExternalDetections || provenance === 'external_detections') {
+    return PROVENANCE_LABELS.EXTERNAL_DETECTIONS;
+  }
+  if (isMock) {
+    return PROVENANCE_LABELS.OFFLINE_DEMO;
+  }
+  if (provenance === 'model_inference') {
+    return PROVENANCE_LABELS.MODEL_INFERENCE;
+  }
+  if (provenance === 'validated_site') {
+    return PROVENANCE_LABELS.VALIDATED_SITE;
+  }
+  return PROVENANCE_LABELS.OFFLINE_DEMO;
+}
+
+/**
  * Normalizes one hazard cell. Prefers the real backend names (p_hazard, class, ...)
  * and falls back to the frontend-compatible aliases the backend also sends.
+ *
+ * Slope guard: if slope_deg is null/undefined or slope status is unavailable,
+ * and the label is "Safe candidate", the cell is reclassified as "Caution"
+ * with the reason "Slope unavailable: a region without slope data cannot be Safe."
  */
 export function normalizeCell(raw) {
   if (!raw) return null;
   const cls = raw.class ?? raw.class_ ?? null;
   const prob = raw.p_hazard ?? raw[BACKEND_FIELDS.CELL_PROBABILITY] ?? null;
-  const label =
+  let label =
     (cls && CLASS_TO_LABEL[cls]) || raw[BACKEND_FIELDS.CELL_LABEL] || HAZARD_LABELS.NOT_ASSESSED;
+  const slopeDeg = raw[BACKEND_FIELDS.CELL_SLOPE] ?? raw.slope_deg ?? null;
+  const slopeStatus = raw[BACKEND_FIELDS.CELL_SLOPE_STATUS] ?? raw.slope_status ?? raw.slope_gate ?? null;
+  const reasons = Array.isArray(raw.reasons) ? [...raw.reasons] : [];
+
+  const isSlopeUnavailable =
+    slopeDeg === null ||
+    slopeDeg === undefined ||
+    String(slopeStatus || '').toLowerCase() === 'unavailable';
+
+  if (isSlopeUnavailable && label === HAZARD_LABELS.SAFE_CANDIDATE) {
+    label = HAZARD_LABELS.CAUTION;
+    const slopeReason = 'Slope unavailable: a region without slope data cannot be Safe.';
+    if (!reasons.includes(slopeReason)) {
+      reasons.push(slopeReason);
+    }
+  }
+
   return {
     row: raw[BACKEND_FIELDS.CELL_ROW],
     col: raw[BACKEND_FIELDS.CELL_COL],
@@ -236,12 +292,12 @@ export function normalizeCell(raw) {
     // largest_boulder_m is a size (diameter); largest_height_m is a height. Never mix them.
     largestHeightM: raw[BACKEND_FIELDS.CELL_LARGEST_HEIGHT] ?? null,
     largestBoulderM: raw.largest_boulder_m ?? null,
-    slopeDeg: raw[BACKEND_FIELDS.CELL_SLOPE] ?? null,
+    slopeDeg,
     slopeGate: raw.slope_gate ?? null,
-    slopeStatus: raw[BACKEND_FIELDS.CELL_SLOPE_STATUS] ?? raw.slope_gate ?? null,
+    slopeStatus,
     recallCorrected: Boolean(raw.recall_corrected),
     explanation: raw.explanation || '',
-    reasons: Array.isArray(raw.reasons) ? raw.reasons : [],
+    reasons,
     missingInputs: Array.isArray(raw.missing_inputs) ? raw.missing_inputs : [],
   };
 }
@@ -252,10 +308,10 @@ export function normalizeCell(raw) {
  */
 export function normalizeResult(raw) {
   if (!raw) {
-    return { image: null, detections: [], hazardCells: [], warnings: [], isMock: true };
+    return { image: null, detections: [], hazardCells: [], warnings: [], isMock: true, provenance: null };
   }
 
-  const rawCells = raw[BACKEND_FIELDS.HAZARD_CELLS] || [];
+  const rawCells = raw[BACKEND_FIELDS.HAZARD_CELLS] || raw.cells || [];
   const rawDetections = raw[BACKEND_FIELDS.DETECTIONS] || [];
   const byId = new Map(
     (Array.isArray(raw.measurements) ? raw.measurements : []).map((m) => [m.detection_id, m])
@@ -269,5 +325,6 @@ export function normalizeResult(raw) {
     hazardCells: Array.isArray(rawCells) ? rawCells.map(normalizeCell) : [],
     warnings: Array.isArray(raw[BACKEND_FIELDS.WARNINGS]) ? raw[BACKEND_FIELDS.WARNINGS] : [],
     isMock: raw.is_mock === undefined ? true : Boolean(raw.is_mock),
+    provenance: raw.provenance ?? null,
   };
 }

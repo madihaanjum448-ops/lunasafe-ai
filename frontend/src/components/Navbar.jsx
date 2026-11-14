@@ -36,7 +36,7 @@ export default function Navbar() {
                   <span className="text-lg font-bold tracking-tight text-white group-hover:text-cyan-300 transition-colors whitespace-nowrap">
                     LunaSafe <span className="text-cyan-400">AI</span>
                   </span>
-                  <ResultBadge short className="whitespace-nowrap" />
+                  <ResultBadge className="whitespace-nowrap" />
                 </div>
                 <p className="text-[11px] text-slate-400 leading-none hidden sm:block whitespace-nowrap">
                   Lunar Landing-Site Safety Assessment
@@ -146,7 +146,7 @@ export default function Navbar() {
             <span>
               Scale: {imageMeta.pixelScaleM ? `${imageMeta.pixelScaleM} m/px ${imageMeta.isSample ? '(Mock value)' : ''}` : 'Unavailable'}
             </span>
-            <ResultBadge short className="whitespace-nowrap" />
+            <ResultBadge className="whitespace-nowrap" />
           </div>
         </div>
       )}

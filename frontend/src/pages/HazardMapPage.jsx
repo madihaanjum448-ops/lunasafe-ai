@@ -45,8 +45,8 @@ export default function HazardMapPage() {
             <span className="text-xs uppercase tracking-widest text-cyan-400 font-mono font-semibold">
               Candidate Hazard Analytics
             </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold tracking-wide">
-              {resultLabel || (hasResult ? (isMock ? 'Demo data' : 'Real AI result') : 'User Upload')}
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold tracking-wide border ${isMock ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'}`}>
+              {resultLabel || 'User Upload'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -59,17 +59,17 @@ export default function HazardMapPage() {
           </p>
         </div>
 
-        {/* Prominent Header Badge: Mock Data Indicator (shown on sample illustration) */}
+        {/* Prominent Header Badge: Provenance Indicator */}
         {hasResult && (
           <div className="flex items-center gap-2 self-start md:self-auto">
-            <div className="px-3.5 py-2 rounded-xl bg-slate-900 border border-amber-500/30 flex items-center gap-2.5 shadow-lg">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <div className={`px-3.5 py-2 rounded-xl bg-slate-900 border flex items-center gap-2.5 shadow-lg ${isMock ? 'border-amber-500/30' : 'border-emerald-500/30'}`}>
+              <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${isMock ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">
                   Evaluation Mode
                 </span>
-                <span className="text-xs font-bold text-amber-300 font-mono">
-                  {isMock ? 'Mock Data Stream' : 'Real AI result'}
+                <span className={`text-xs font-bold font-mono ${isMock ? 'text-amber-300' : 'text-emerald-300'}`}>
+                  {resultLabel}
                 </span>
               </div>
             </div>

@@ -10,7 +10,7 @@ import {
   MULTIPLE_FILES_NOTE,
   isValidFileType,
 } from '../constants/upload';
-import { normalizeResult } from '../constants/schema';
+import { normalizeResult, getProvenanceLabel } from '../constants/schema';
 import sampleAnalyzeRequest from '../mock/sampleAnalyzeRequest.json';
 import sampleAnalyzeResponse from '../mock/sampleAnalyzeResponse.json';
 import { analyze, getConfig, uploadImage } from '../api/client';
@@ -68,11 +68,19 @@ export function MissionProvider({ children }) {
   const [analysisConfig, setAnalysisConfig] = useState(null);
   const [pendingDetections, setPendingDetections] = useState(null);
   const [thresholds, setThresholds] = useState({});
-  const [resultSource, setResultSource] = useState('sample'); // 'sample' | 'backend' | 'precomputed'
-  const [resultLabel, setResultLabel] = useState(null);
+  const [resultSource, setResultSource] = useState('sample'); // 'sample' | 'backend' | 'precomputed' | 'external-detections'
+  const [provenance, setProvenance] = useState(initialNormalizedSample.provenance ?? null);
   const [staleResult, setStaleResult] = useState(false);
   const uploadedFileRef = useRef(null);
   const uploadSeq = useRef(0);
+
+  const resultLabel = hasResult
+    ? getProvenanceLabel({
+        isMock,
+        provenance,
+        isExternalDetections: resultSource === 'external-detections',
+      })
+    : null;
 
   // Default thresholds for the explanation panel (placeholders, not validated limits)
   useEffect(() => {
@@ -197,6 +205,7 @@ export function MissionProvider({ children }) {
     setHazardCells(n.hazardCells);
     setWarnings(n.warnings);
     setIsMock(n.isMock);
+    setProvenance(n.provenance ?? raw.provenance ?? null);
     setHasResult(true);
     setResultSource('precomputed');
     setSelectedCell(null);
@@ -207,8 +216,9 @@ export function MissionProvider({ children }) {
   const loadOfflineDemo = () => {
     uploadSeq.current += 1; // ignore any request still in flight
     setLoading(false);
-    setResultLabel(null);
     applyPrecomputed(sampleAnalyzeResponse, { useSampleImage: true });
+    setProvenance(null);
+    setResultSource('sample');
     setStaleResult(false);
     setUploadSuccess('Offline demo loaded (pre-computed, is_mock: true). No backend needed.');
   };
@@ -277,7 +287,6 @@ export function MissionProvider({ children }) {
       };
 
       applyPrecomputed(rawWithRealDims, { useSampleImage: false });
-      setResultLabel('Pre-computed case study');
       setStaleResult(false);
       setPendingDetections(null);
       uploadedFileRef.current = null;
@@ -356,8 +365,9 @@ export function MissionProvider({ children }) {
       setHazardCells(n.hazardCells);
       setWarnings(n.warnings);
       setIsMock(n.isMock);
+      setProvenance(n.provenance ?? result.provenance ?? null);
       setHasResult(true);
-      setResultSource('backend');
+      setResultSource(demo ? 'sample' : 'external-detections');
       setStaleResult(false);
       setSelectedCell(null);
     } catch (err) {
@@ -394,8 +404,8 @@ export function MissionProvider({ children }) {
     setApiError(null);
     setHasResult(true);
     setIsMock(true);
+    setProvenance(null);
     setResultSource('sample');
-    setResultLabel(null);
     setBackendImage(null);
     setMissingMetadata([]);
     setBackendWarnings([]);
@@ -503,7 +513,7 @@ export function MissionProvider({ children }) {
       setIsMock(false);
       setResultSource('backend');
       setStaleResult(true);
-      setResultLabel(null);
+      setProvenance(null);
       setBackendImage(null);
       setMissingMetadata([]);
       setBackendWarnings([]);
@@ -570,6 +580,7 @@ export function MissionProvider({ children }) {
         resetThresholds,
         resultSource,
         staleResult,
+        provenance,
         resultLabel,
         loadOfflineDemo,
         loadCaseStudy,

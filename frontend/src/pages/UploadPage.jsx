@@ -60,12 +60,9 @@ export default function UploadPage() {
     if (resultLabel) {
       return resultLabel.toLowerCase().startsWith('from')
         ? resultLabel
-        : `From the ${resultLabel.toLowerCase()}`;
+        : `From ${resultLabel.toLowerCase()}`;
     }
-    if (isMock) {
-      return 'From demo data';
-    }
-    return 'From the backend result';
+    return 'From offline demo';
   })();
 
   const onDetectionsFile = (e) => {
@@ -532,7 +529,7 @@ export default function UploadPage() {
                       {detections.length} obstacles
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          ({resultLabel || 'Demo data'})
+                          ({resultLabel || 'Offline demo'})
                         </span>
                       )}
                     </>
@@ -549,7 +546,7 @@ export default function UploadPage() {
                       {hazardCells.length} cells
                       {isMock && (
                         <span className="ml-1.5 text-[10px] text-amber-400 font-sans font-normal">
-                          ({resultLabel || 'Demo data'})
+                          ({resultLabel || 'Offline demo'})
                         </span>
                       )}
                     </>
