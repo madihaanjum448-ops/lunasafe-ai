@@ -14,44 +14,48 @@ import { describeHeightMethod } from '../constants/schema';
    + a small per-band colour legend.  State lives in MissionContext so
    it persists when the user navigates to the Hazard Map page and back.
    ───────────────────────────────────────────────────────────────── */
-function LayersPanel() {
+function LayersPanel({ showSegmentationOutlines, setShowSegmentationOutlines }) {
   const {
     showBoulderBoxes,    setShowBoulderBoxes,
     showConfidenceLabels, setShowConfidenceLabels,
     showHeatmap,         setShowHeatmap,
   } = useMission();
 
-  const toggleRow = (label, checked, onChange, sublabel = null) => (
-    <label className="flex items-center gap-3 cursor-pointer group">
-      <span className="relative flex-shrink-0">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="sr-only peer"
-        />
-        {/* Custom pill toggle */}
-        <span
-          className={`block w-9 h-5 rounded-full transition-colors duration-200 ${
-            checked ? 'bg-cyan-500' : 'bg-slate-700'
-          }`}
-        />
-        <span
-          className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
-            checked ? 'translate-x-4' : 'translate-x-0'
-          }`}
-        />
-      </span>
-      <span className="flex flex-col">
-        <span className={`text-xs font-medium leading-tight ${checked ? 'text-slate-100' : 'text-slate-400'}`}>
-          {label}
+  const toggleRow = (label, checked, onChange, sublabel = null) => {
+    const inputId = `toggle-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    return (
+      <label htmlFor={inputId} className="flex items-center gap-3 cursor-pointer group">
+        <span className="relative flex-shrink-0">
+          <input
+            id={inputId}
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+            className="sr-only peer"
+          />
+          {/* Custom pill toggle */}
+          <span
+            className={`block w-9 h-5 rounded-full transition-colors duration-200 ${
+              checked ? 'bg-cyan-500' : 'bg-slate-700'
+            }`}
+          />
+          <span
+            className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              checked ? 'translate-x-4' : 'translate-x-0'
+            }`}
+          />
         </span>
-        {sublabel && (
-          <span className="text-[11px] text-slate-500 leading-tight">{sublabel}</span>
-        )}
-      </span>
-    </label>
-  );
+        <span className="flex flex-col">
+          <span className={`text-xs font-medium leading-tight ${checked ? 'text-slate-100' : 'text-slate-400'}`}>
+            {label}
+          </span>
+          {sublabel && (
+            <span className="text-[11px] text-slate-500 leading-tight">{sublabel}</span>
+          )}
+        </span>
+      </label>
+    );
+  };
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4">
@@ -69,6 +73,7 @@ function LayersPanel() {
         {toggleRow('Boulder boxes', showBoulderBoxes, setShowBoulderBoxes)}
         {toggleRow('Confidence labels', showConfidenceLabels, setShowConfidenceLabels,
           showBoulderBoxes ? null : 'Enable boulder boxes first')}
+        {toggleRow('Show segmentation outlines', showSegmentationOutlines, setShowSegmentationOutlines)}
         {toggleRow('Hazard heatmap', showHeatmap, setShowHeatmap,
           'Hazard grid')}
       </div>
@@ -113,6 +118,7 @@ export default function DetectionsPage() {
   } = useMission();
 
   const [selectedDetection, setSelectedDetection] = useState(null);
+  const [showSegmentationOutlines, setShowSegmentationOutlines] = useState(true);
 
   const visibleDetections = detections.filter(
     (d) => d.confidence >= confidenceThreshold
@@ -123,6 +129,14 @@ export default function DetectionsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {!showSegmentationOutlines && (
+        <style>{`
+          .boulder-detections-layer polygon,
+          polygon {
+            display: none !important;
+          }
+        `}</style>
+      )}
       {/* ── Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -231,13 +245,85 @@ export default function DetectionsPage() {
               No detections above this confidence.
             </div>
           )}
+
+          {/* ── Detections List ── */}
+          {hasResult && detections && detections.length > 0 && (
+            <div className="mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                  <h3 className="font-semibold text-white text-sm">
+                    Detections List ({detections.length} total)
+                  </h3>
+                </div>
+                <span className="text-xs text-slate-400">
+                  Click a detection to inspect telemetry
+                </span>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto pr-1">
+                <ul role="list" aria-label="Detections list" className="space-y-2">
+                  {detections.map((d) => {
+                    const isSelected = selectedDetection?.id === d.id;
+                    const confPct = `${Math.round(d.confidence * 100)}%`;
+                    const className = d.className || d.class_name || d.class || d.label || 'boulder';
+                    const hasOutline = Boolean(Array.isArray(d.polygon) && d.polygon.length >= 3);
+                    return (
+                      <li
+                        key={d.id}
+                        role="listitem"
+                        onClick={() => setSelectedDetection(d)}
+                        className={`p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-cyan-950/40 border border-cyan-500/50 shadow-md shadow-cyan-950/30'
+                            : 'bg-slate-950/60 border border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono font-bold text-white text-xs px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                            #{d.id}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-200">
+                            {className}
+                          </span>
+                        </div>
+                        <div className="flex items-center flex-wrap gap-4 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-400">Confidence:</span>
+                            <span className="font-mono font-bold text-cyan-400">{confPct}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-400">Segmentation outline:</span>
+                            <span
+                              className={`font-mono font-semibold px-2 py-0.5 rounded text-[11px] border ${
+                                hasOutline
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                              }`}
+                            >
+                              {hasOutline ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right column: Layers panel + boulder inspector + tips */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-4">
 
           {/* Layers panel (sample only) */}
-          {hasResult && <LayersPanel />}
+          {hasResult && (
+            <LayersPanel
+              showSegmentationOutlines={showSegmentationOutlines}
+              setShowSegmentationOutlines={setShowSegmentationOutlines}
+            />
+          )}
 
           {/* Boulder Inspector card */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
@@ -267,9 +353,25 @@ export default function DetectionsPage() {
                     <div className="text-right">
                       <span className="text-[11px] text-slate-400 block">Confidence</span>
                       <span className="font-mono font-bold text-cyan-400 text-base">
-                        {(selectedDetection.confidence * 100).toFixed(0)}%
+                        {`${Math.round(selectedDetection.confidence * 100)}%`}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Class Name */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Class Name:</span>
+                    <span className="font-mono font-bold text-slate-200">
+                      {selectedDetection.className || selectedDetection.class_name || selectedDetection.class || selectedDetection.label || 'boulder'}
+                    </span>
+                  </div>
+
+                  {/* Segmentation Outline */}
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-400">Segmentation Outline:</span>
+                    <span className={`font-mono font-bold ${Array.isArray(selectedDetection.polygon) && selectedDetection.polygon.length >= 3 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {Array.isArray(selectedDetection.polygon) && selectedDetection.polygon.length >= 3 ? 'Yes' : 'No'}
+                    </span>
                   </div>
 
                   {/* Diameter */}

@@ -14,6 +14,7 @@ import { normalizeResult, getProvenanceLabel } from '../constants/schema';
 import sampleAnalyzeRequest from '../mock/sampleAnalyzeRequest.json';
 import sampleAnalyzeResponse from '../mock/sampleAnalyzeResponse.json';
 import { analyze, getConfig, uploadImage } from '../api/client';
+import { validateDetections } from '../utils/validateDetections';
 
 const initialNormalizedSample = normalizeResult(sampleResult);
 
@@ -142,9 +143,8 @@ export function MissionProvider({ children }) {
     try {
       const parsed = JSON.parse(await file.text());
       const list = Array.isArray(parsed) ? parsed : parsed.detections;
-      if (!Array.isArray(list) || list.some((d) => !d || !Array.isArray(d.bbox))) {
-        throw new Error('Expected a list of detections, each with id, bbox and confidence.');
-      }
+      const problem = validateDetections(list, imageMeta);
+      if (problem) throw new Error(problem);
       setPendingDetections({
         name: file.name,
         detections: list,
