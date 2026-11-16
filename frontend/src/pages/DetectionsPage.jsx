@@ -118,7 +118,7 @@ export default function DetectionsPage() {
   } = useMission();
 
   const [selectedDetection, setSelectedDetection] = useState(null);
-  const [showSegmentationOutlines, setShowSegmentationOutlines] = useState(true);
+  const [showSegmentationOutlines] = useState(true);
 
   const visibleDetections = detections.filter(
     (d) => d.confidence >= confidenceThreshold
