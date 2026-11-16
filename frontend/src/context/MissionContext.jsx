@@ -361,6 +361,18 @@ export function MissionProvider({ children }) {
           };
       const result = await analyze(payload);
       const n = normalizeResult(result);
+      // Copy polygons from original pending detections if missing in the analysis result
+      if (pendingDetections?.detections) {
+        const pendingMap = new Map(pendingDetections.detections.map((d) => [d.id, d]));
+        n.detections.forEach((det) => {
+          if (!det.polygon) {
+            const src = pendingMap.get(det.id);
+            if (src && src.polygon) {
+              det.polygon = src.polygon;
+            }
+          }
+        });
+      }
       setDetections(n.detections);
       setHazardCells(n.hazardCells);
       setWarnings(n.warnings);
